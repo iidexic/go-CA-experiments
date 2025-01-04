@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"image/color"
 
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/iidexic/go-CA-experiments/utils"
 )
 
@@ -13,9 +14,8 @@ type sequence interface {
 	apply(g gobject)
 }
 */
-// TODO Determine best method of bridging gap between byte vals and int stepcount
-// colorchange - struct for defining a shift from start -> end color in given stepcount
-// max stepcount 255 - implement scale/dither if want longer
+
+// colorchange - struct for defining a shift from start -> end color in stepcount steps
 type colorchange struct {
 	start, end                color.RGBA
 	delta, stepdelta, stepmod []byte
@@ -23,6 +23,7 @@ type colorchange struct {
 	stepcount                 uint8
 }
 
+// cc.calcDelta generates cc.delta, byte slice of start-end difference of RGBA values
 func (cc colorchange) calcDelta() {
 	cc.delta = make([]byte, 4)
 	cc.delta[0] = cc.start.R - cc.end.R
@@ -49,12 +50,15 @@ func gradient(start, end color.RGBA, stepcount uint8) colorchange {
 
 	return cc
 }
+func colornoise(img *ebiten.Image) {
+	img.Bounds()
+}
 
 // Randcolor64 returns a pseudo-random generated 64x64 2d slice of color.RGBA
 func Randcolor64() []color.RGBA {
 	var bg []byte = make([]byte, 12288)
-	fa := utils.Bytesum(bg[bg[1]:(bg[1] + 24)]) //semirandom start point for alpha to try and cut down random gens at least a little, will investigate necessity later
 	_, err := rand.Read(bg)
+	fa := utils.Bytesum(bg[bg[1]:(bg[1] + 24)]) //semirandom start point for alpha to try and cut down random gens at least a little, will investigate necessity later
 
 	utils.CheckPants(err)
 
@@ -74,11 +78,13 @@ func Randcolors(size int) []color.RGBA {
 }
 
 // Randfade generates gradient between random color and black in `stepcount` steps
+// TODO rewrite to use colorchange struct
 func Randfade(stepcount uint8) []color.RGBA {
 	var cs []color.RGBA = make([]color.RGBA, stepcount)
 	cs[0] = Randcolor()
 	//fade := make([]byte, 4)
 	for i := uint8(1); i < stepcount; i++ {
+
 	}
 	return cs
 }

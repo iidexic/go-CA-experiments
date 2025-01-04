@@ -38,13 +38,21 @@ fmt.Printf("%08b (%d) / %08b (%d) = %08b (%d)",b2,int(b2),b1,int(b1),b3,int(b3))
 ```go
 // Testing Byte signing
 import "fmt"
-import "math"
+
 x := 0b00_01_01_10
 y := 0b00_00_10_01
 z := x - (0b00000011*y)
 fmt.Printf("%08b-%08b = %08b\n",x,y,x-y)
 fmt.Printf("%d-%d=%d\n",x,y,x-y)
 fmt.Printf("%08b-(0b11*%08b)=%08b\n",x,y,z)
-fmt.Printf("|%08b-(0b11*%08b)|=%08b\n",x,y,math.abs(z))
+fmt.Printf("|%08b-(0b11*%08b)|=%08b\n",x,y)
 fmt.Printf("%d-(3*%d)=u8 %d\n",x,y,uint8(z))
+```
+
+```go
+// looking at math rand v2
+import "math/rand/v2"
+import "fmt"
+u:= rand.uint()
+fmt.Printf("rand val: %d\n",u)
 ```
