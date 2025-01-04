@@ -61,6 +61,7 @@ func (obj *testobj) genSquare() {
 	obj.op = &ebiten.DrawImageOptions{}
 
 	obj.img.Fill(color.RGBA{245, 10, 20, 255})
+	//obj.img.WritePixels(Randpx(uint(obj.r.Dx() * obj.r.Dy())))
 	movearound(obj.op)
 	obj.set = true
 }
@@ -72,16 +73,13 @@ func giveSquarePlease() *testobj {
 	return &obj
 }
 
-/*
+// * Try putting this in a new function.
+// * This would trigger AFTER the object has been rendered
+// ? Is it more efficint to then copy the image to a new object?
 func imagenoise(img *ebiten.Image) {
-	r := img.Bounds()
-	inew := image.NewRGBA(r)
-	for y := range r.Dy() {
-		for x := range r.Dx() {
-			img.WritePixels()
-		}
-	}
-}*/
+	area := uint(img.Bounds().Dx() * img.Bounds().Dy())
+	img.WritePixels(Randpx(area))
+}
 
 func movearound(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
@@ -113,7 +111,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		fillcolor = Randcolor()
 		latch = false
 	}
-
+	if ebiten.IsKeyPressed(ebiten.KeyR) {
+		imagenoise(sqrobj.img)
+	}
 	//* preventing re-generation of ezgenSquare each frame. Possibly a better solution?
 	if !latch {
 		sqrobj.genSquare()

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"image/color"
 
+	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/iidexic/go-CA-experiments/utils"
 )
@@ -19,7 +20,7 @@ type sequence interface {
 type colorchange struct {
 	start, end                color.RGBA
 	delta, stepdelta, stepmod []byte
-	result                    []color.RGBA
+	result                    []byte
 	stepcount                 uint8
 }
 
@@ -68,8 +69,20 @@ func Randcolor64() []color.RGBA {
 	return arrayToColor(cbytes)
 }
 
-// Randcolors returns quantity colors requested
-func Randcolors(size int) []color.RGBA {
+// Randpx uses bytedance fastrand to generate pixelcount random RGB colors.
+// as of now, it generates RGBA rand for all pix and replaces A with 255.
+func Randpx(pixelcount uint) []byte {
+	b := make([]byte, pixelcount*4)
+	_, err := fastrand.Read(b)
+	for i := 3; i < len(b); i += 4 {
+		b[i] = 255
+	}
+	utils.CheckPants(err)
+	return b
+}
+
+// randcolors returns quantity colors requested
+func randcolors(size int) []color.RGBA {
 	var cs []color.RGBA = make([]color.RGBA, size)
 	for i := range size {
 		cs[i] = Randcolor()
