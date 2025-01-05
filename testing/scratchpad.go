@@ -13,7 +13,7 @@ func main() {
 //
 //*=========================================================================
 //==========================================================================
-//! I decided this really is not worth it to be doing
+// This really is not worth it to be doing
 // Was testing manual byte extraction from a uint64
 /*
 

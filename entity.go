@@ -2,7 +2,6 @@ package main
 
 import (
 	"image"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -28,7 +27,7 @@ type stateManager interface {
 
 // REVIEW might want to actually make the Entity just separate from  entityProperties, entityState.
 
-// Entity interface for all game entities
+// Entity interface for all game entities.
 type Entity interface {
 	NewInstance()
 	EmitEntity()
@@ -48,11 +47,15 @@ type BaseEntity struct {
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	base         color.RGBA
-	x, y, tx, ty float64
+	img        *ebiten.Image
+	subs       []ebiten.Image
+	r          image.Rectangle
+	op         *ebiten.DrawImageOptions
+	set, drawn bool
 }
 
 // SetProperties of BaseEntity object
 func (e *BaseEntity) SetProperties(i int) {
 	_ = i
+
 }
