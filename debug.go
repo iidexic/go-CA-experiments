@@ -11,19 +11,20 @@ import (
 type msgGen func() string
 
 type showDebugInfo struct {
-	showDebug, tps, tick, screen, layouts, windowPX, frames bool
-	len                                                     int
-	output                                                  string
+	showDebug, tps, tick, screen, layouts, windowPX, frames, fps bool
+	len                                                          int
+	output                                                       string
 }
 
 var dbg showDebugInfo = showDebugInfo{
 	showDebug: true,
-	tps:       false,
-	tick:      false,
+	tps:       true,
+	tick:      true,
 	frames:    false,
 	screen:    false,
 	layouts:   false,
 	windowPX:  false,
+	fps:       true,
 	len:       0,
 	output:    ""}
 
@@ -47,11 +48,13 @@ func debugMsgControl() {
 			dbg.windowPX = !dbg.windowPX
 		} else if inpututil.IsKeyJustPressed(ebiten.Key6) {
 			dbg.frames = !dbg.frames
+		} else if inpututil.IsKeyJustPressed(ebiten.Key7) {
+			dbg.fps = !dbg.fps
 		}
 
 	}
-	dbgPack := []bool{dbg.tps, dbg.tick, dbg.screen, dbg.windowPX, dbg.frames, dbg.layouts}
-	genPack := []msgGen{debugTPS, debugTick10, debugScreen, debugPX, debugFrames10, debugLayouts10}
+	dbgPack := []bool{dbg.tps, dbg.tick, dbg.screen, dbg.windowPX, dbg.frames, dbg.layouts, dbg.fps}
+	genPack := []msgGen{debugTPS, debugTick10, debugScreen, debugPX, debugFrames10, debugLayouts10, debugFPS}
 	dbg.output = stringMerge(dbgPack, genPack)
 }
 
@@ -71,6 +74,9 @@ func stringMerge(shouldWrite []bool, gen []msgGen) string {
 
 func debugTPS() string {
 	return fmt.Sprintf("| tps: %f ", ebiten.ActualTPS())
+}
+func debugFPS() string {
+	return fmt.Sprintf("| fps: %f ", ebiten.ActualFPS())
 }
 func debugTick10() string {
 	return fmt.Sprintf("| tick: %03d ", tick/10)

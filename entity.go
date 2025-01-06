@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -29,7 +30,7 @@ type stateManager interface {
 
 // Entity interface for all game entities.
 type Entity interface {
-	NewInstance()
+	Defaults()
 	EmitEntity()
 }
 
@@ -52,6 +53,16 @@ type GridEntity struct {
 	r          image.Rectangle
 	op         *ebiten.DrawImageOptions
 	set, drawn bool
+}
+
+// Defaults for entity type
+func (grid GridEntity) Defaults() {
+	width := (3 * pixWidth) / 4
+	height := (3 * pixHeight) / 4
+	grid.img = ebiten.NewImage(width, height)
+	grid.op = &ebiten.DrawImageOptions{}
+	grid.op.GeoM.Translate(float64((pixWidth-width)/2), float64((pixHeight-height)/2))
+	grid.img.Fill(color.Gray{})
 }
 
 // SetProperties of BaseEntity object
