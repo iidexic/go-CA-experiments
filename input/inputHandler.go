@@ -5,23 +5,22 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-type inputState struct {
-}
-type inputKeyboard struct {
-	pressed, down, released []ebiten.Key
-}
-type inputMouse struct {
-	pressed, down, rleased []ebiten.MouseButton
-	wheel                  int
-}
-type inputPad struct {
-}
+//gotta rethink this one
 
 var x ebiten.Key
 
+func inputInit() {
+	//? Slice size allocation arbitrary. Is there a better way?
+	padID := make([]ebiten.GamepadID, 6)
+	ebiten.AppendGamepadIDs(padID)
+	inKey := make([]ebiten.Key, 24)
+	inPad := make([]ebiten.GamepadButton, 60)
+	inpututil.AppendPressedGamepadButtons()
+	inpututil.AppendPressedStandardGamepadButtons()
+	ebiten.GamepadAxis()
+}
 func getState() []ebiten.Key {
-	in := []ebiten.Key{}
-	inpututil.AppendPressedKeys(in)
-	pad := inpututil.AppendPressedGamepadButtons()
+
+	inpututil.AppendPressedKeys(inKey)
 
 }
