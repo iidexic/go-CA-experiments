@@ -1,11 +1,13 @@
 package input
 
+//STUB - need to rethink input handling
+/*
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-//gotta rethink this one
+
 
 var x ebiten.Key
 
@@ -24,3 +26,4 @@ func getState() []ebiten.Key {
 	inpututil.AppendPressedKeys(inKey)
 
 }
+*/

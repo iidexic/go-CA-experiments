@@ -44,7 +44,7 @@ func (obj *testobj) genSquare() {
 	obj.img = ebiten.NewImageWithOptions(obj.r, &options)
 	obj.op = &ebiten.DrawImageOptions{}
 
-	//obj.img.Fill(color.RGBA{245, 10, 20, 255})
+	obj.img.WritePixels()
 
 	testMove(obj.op)
 	obj.set = true
@@ -58,6 +58,23 @@ func imagenoise(img *ebiten.Image) {
 func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
+func inputActions() {
+	_, wy := ebiten.Wheel()
+	if wy > 0 {
+
+		latch = false
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyE) {
+		g.maingrid.Defaults()
+		g.maingrid.draw = true
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyR) {
+		imagenoise(sqrobj.img)
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		testMove(sqrobj.op)
+	}
+}
 
 // TODO - determine best  update/draw relation
 // ==================================
@@ -66,30 +83,20 @@ func testMove(op *ebiten.DrawImageOptions) {
 
 // Game struct - ebiten
 type Game struct {
+	maingrid GridEntity
 }
 
 // Update game - game logic, assume locked at 60TPS.
 func (g *Game) Update() error {
 	defer debugMsgControl()
 	countTicks()
-
+	inputActions()
 	return nil
 }
 
 // Draw screen
 func (g *Game) Draw(screen *ebiten.Image) {
 	countFrames()
-	_, wy := ebiten.Wheel()
-	if wy > 0 {
-
-		latch = false
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyR) {
-		imagenoise(sqrobj.img)
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		testMove(sqrobj.op)
-	}
 
 	if !latch { //FIXME - replace this
 		sqrobj.genSquare()
@@ -104,9 +111,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 }
 
-// Layout of game window (Original width height 320x240, this is gameworld  size/scale)
+// Layout of game window (screen/game)
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	//? Layout "screenWidth, screenHeight". What are window and screen sizes used for?
 	layoutCount++
 	return gameWidth, gameHeight
 }
@@ -120,48 +126,8 @@ func main() {
 
 	ebiten.SetWindowSize(pixWidth, pixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
-	if err := ebiten.RunGame(&Game{}); err != nil {
+
+	if err := ebiten.RunGame(&Game{maingrid: makeGridDefault()}); err != nil {
 		log.Fatal(err)
 	}
 }
-
-// =====================================================================
-// =====================================================================
-// = Closet to sweep clutter into
-// for WritePixels len(pix) must be 4*imageWidth*imageHeight
-//Pix = []byte { R, G, B, A, R, G, B, A, R, G, B, A}
-// Image interface has value [I forgot name] that aids in maneuvering pixel rows
-//NOTE Good Practices
-// - GeoM moves BEFORE fill/write pixel?
-
-// * Try putting this in a new function. [imageNoise?]
-// * This would trigger AFTER the object has been rendered
-// ? the NewImage thing said to minimize NewImage object gen + said use clear+WritePixels
-// ? BUT Also somewhere said it is very inefficient to write to an image after it has been drawn (or something)
-
-/*
-Potentially Useful Later:
-// initializes testobj and return pointer
-func giveSquarePlease() *testobj {
-	obj := testobj{
-		img: ebiten.NewImage(1, 1),
-		op:  &ebiten.DrawImageOptions{},
-	}
-	return &obj
-}
-*/
-
-/* Replaced with testobj method
-func ezgenSquare() testobj {
-	var obj testobj
-
-	obj.r = image.Rect(10, 10, 0, 0)
-	options := ebiten.NewImageOptions{}
-	obj.img = ebiten.NewImageWithOptions(obj.r, &options)
-	obj.op = &ebiten.DrawImageOptions{}
-
-	obj.img.Fill(color.RGBA{245, 10, 20, 255})
-	movearound(obj.op)
-	return obj
-}
-*/

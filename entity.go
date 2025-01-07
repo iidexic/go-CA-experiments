@@ -55,6 +55,10 @@ type GridEntity struct {
 	set, draw bool
 }
 
+// MapEntity planned for array of instances of entity with set locations
+type MapEntity struct {
+}
+
 // Defaults for entity type
 func (grid GridEntity) Defaults() {
 	width := (3 * pixWidth) / 4
@@ -64,6 +68,21 @@ func (grid GridEntity) Defaults() {
 	grid.op.GeoM.Translate(float64((pixWidth-width)/2), float64((pixHeight-height)/2))
 	grid.img.Fill(color.Gray{})
 	grid.set = true
+}
+
+// ?-------------------byval ok?
+func makeGridDefault() GridEntity {
+	grid := GridEntity{
+		img: ebiten.NewImage((3*pixWidth)/4, (3*pixHeight)/4),
+		op:  &ebiten.DrawImageOptions{},
+		set: true,
+	}
+	width := (3 * pixWidth) / 4
+	height := (3 * pixHeight) / 4
+
+	grid.op.GeoM.Translate(float64((pixWidth-width)/2), float64((pixHeight-height)/2))
+	grid.img.Fill(color.Gray{})
+	return grid
 }
 
 // SetProperties of BaseEntity object
