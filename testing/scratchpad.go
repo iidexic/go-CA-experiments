@@ -2,18 +2,18 @@ package main
 
 import (
 	"fmt"
-	"math/rand/v2"
 )
 
 func main() {
-	u := rand.New(rand.Source())
-	fmt.Printf("rand u64: %d\n", u)
+	for f := range 5 {
+		fmt.Printf("3 mod %d = %d\n", f+1, 3%(f+1))
+	}
 }
 
 //
 //*=========================================================================
 //==========================================================================
-// This really is not worth it to be doing
+
 // Was testing manual byte extraction from a uint64
 /*
 
@@ -39,3 +39,15 @@ func main() {
 		}
 	}
 */
+/*
+experimenting:
+func main() {
+	byte1 := byte(240)
+	byte2 := byte(183)
+	bpos := byte1 - byte2
+	bneg := byte2 - byte1
+	fmt.Printf("bigger-larger=%d(%08b)\nlarger-bigger = %d(%08b)\n", int(bpos), bpos, int(bneg), bneg)
+	for f := range 5 {
+		fmt.Printf("num %d\n", f)
+	}
+}*/

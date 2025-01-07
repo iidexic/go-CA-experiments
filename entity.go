@@ -48,11 +48,11 @@ type BaseEntity struct {
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	img        *ebiten.Image
-	subs       []ebiten.Image
-	r          image.Rectangle
-	op         *ebiten.DrawImageOptions
-	set, drawn bool
+	img       *ebiten.Image
+	subs      []ebiten.Image
+	r         image.Rectangle
+	op        *ebiten.DrawImageOptions
+	set, draw bool
 }
 
 // Defaults for entity type
@@ -63,6 +63,7 @@ func (grid GridEntity) Defaults() {
 	grid.op = &ebiten.DrawImageOptions{}
 	grid.op.GeoM.Translate(float64((pixWidth-width)/2), float64((pixHeight-height)/2))
 	grid.img.Fill(color.Gray{})
+	grid.set = true
 }
 
 // SetProperties of BaseEntity object

@@ -8,47 +8,41 @@ import (
 	"github.com/iidexic/go-CA-experiments/utils"
 )
 
-/* unused interface/structs
-// sequence is an interface for sequences. stepped/slewed sequences of color changes/gradients
-type sequence interface {
-	apply(g gobject)
-}
-*/
-
 // colorchange - struct for defining a shift from start -> end color in stepcount steps
-type colorchange struct {
-	start, end                color.RGBA
-	delta, stepdelta, stepmod []byte
-	result                    []byte
-	stepcount                 uint8
-}
 
-// cc.calcDelta generates cc.delta, byte slice of start-end difference of RGBA values
-func (cc colorchange) calcDelta() {
-	cc.delta = make([]byte, 4)
-	cc.delta[0] = cc.start.R - cc.end.R
-	cc.delta[1] = cc.start.G - cc.end.G
-	cc.delta[2] = cc.start.B - cc.end.B
-	cc.delta[3] = cc.start.A - cc.end.A
-}
-
-// calcStep will use cc delta and size to determine required step size
-func (cc colorchange) calcStep() {
-	cc.stepdelta = make([]byte, 4)
-	if cc.stepcount == 0 {
-		cc.stepcount = 4
+func gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
+	//?case of no-change cause issue? Zero case treated as + for now
+	if steps == 0 {
+		steps = 4
 	}
-	for i, bytedelta := range cc.delta {
-		cc.stepdelta[i] = bytedelta / cc.stepcount
-		cc.stepmod[i] = bytedelta % cc.stepcount
-	}
-}
-func gradient(start, end color.RGBA, stepcount uint8) colorchange {
-	cc := colorchange{start: start, end: end, stepcount: stepcount}
-	cc.calcDelta()
-	cc.calcStep()
+	delta := make([]byte, 4)
+	gr := make([]byte, (steps+1)*4)
+	s := int(steps)
+	for i, v := range c2 {
 
-	return cc
+		gr[i] = c1[i]
+		gr[s*i] = c2[i]
+		//--------------
+		var cstart byte
+		if v >= c1[i] {
+			delta[i] = v - c1[i]
+			cstart = c1[i]
+		} else {
+			delta[i] = c1[i] - v
+			cstart = v
+		}
+		d := delta[i] / byte(steps)
+		r := delta[i] % byte(steps)
+		var n int
+		for n = 1; n < s; n++ {
+			plusr := byte(0)
+			if byte(n) <= r {
+				plusr++
+			}
+			gr[i+4*n] = cstart + d*byte(n) + plusr
+		}
+	}
+	return gr
 }
 
 // Randpx uses bytedance fastrand to generate pixelcount random RGB colors.
@@ -95,5 +89,50 @@ func Randcolor() color.RGBA {
 //======================================================
 //=== Not currently used ===============================
 /*
+// sequence is an interface for sequences. stepped/slewed sequences of color changes/gradients
+type sequence interface {
+	apply(g gobject)
+}
+*/
+//func gradientRemainder(n, steps,sd, sr int) int{
+// 	not useful time spend to make more good
+// 	if n in first half (,steps//2) and stepnum % steps/sr == 0)
+// 	if in same range on other side of halfway
+//}
+/* original gradient work
+type colorchange struct {
+	start, end                color.RGBA
+	delta, stepdelta, stepmod []byte
+	result                    []byte
+	stepcount                 uint8
+}
 
- */
+// cc.calcDelta generates cc.delta, byte slice of start-end difference of RGBA values
+func (cc colorchange) calcDelta() {
+	cc.delta = make([]byte, 4)
+	cc.delta[0] = cc.start.R - cc.end.R
+	cc.delta[1] = cc.start.G - cc.end.G
+	cc.delta[2] = cc.start.B - cc.end.B
+	cc.delta[3] = cc.start.A - cc.end.A
+}
+
+// calcStep will use cc delta and size to determine required step size
+func (cc colorchange) calcStep() {
+	cc.stepdelta = make([]byte, 4)
+	if cc.stepcount == 0 {
+		cc.stepcount = 4
+	}
+	for i, bytedelta := range cc.delta {
+		cc.stepdelta[i] = bytedelta / cc.stepcount
+		cc.stepmod[i] = bytedelta % cc.stepcount
+	}
+}
+func gradient(start, end color.RGBA, stepcount uint8) colorchange {
+	cc := colorchange{start: start, end: end, stepcount: stepcount}
+	cc.calcDelta()
+	cc.calcStep()
+
+	return cc
+}
+
+*/
