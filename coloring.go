@@ -1,23 +1,22 @@
 package main
 
 import (
-	"crypto/rand"
-	"image/color"
-
 	"github.com/bytedance/gopkg/lang/fastrand"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/iidexic/go-CA-experiments/utils"
 )
 
-// colorchange - struct for defining a shift from start -> end color in stepcount steps
-
+// Gradientbytes makes a gradient from color c1 to color c2 in number of steps
+// currently annotated so I can remember what I did
 func gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
-	//?case of no-change cause issue? Zero case treated as + for now
+	//default 4 steps, to avoid divide by 0
 	if steps == 0 {
 		steps = 4
 	}
-	delta := make([]byte, 4)
+	//slice+type prep
+	var delta byte
 	gr := make([]byte, (steps+1)*4)
-	s := int(steps)
+	s := int(steps) //arg as uint8 to control range.
 	for i, v := range c2 {
 
 		gr[i] = c1[i]
@@ -25,14 +24,14 @@ func gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
 		//--------------
 		var cstart byte
 		if v >= c1[i] {
-			delta[i] = v - c1[i]
+			delta = v - c1[i]
 			cstart = c1[i]
 		} else {
-			delta[i] = c1[i] - v
+			delta = c1[i] - v
 			cstart = v
 		}
-		d := delta[i] / byte(steps)
-		r := delta[i] % byte(steps)
+		d := delta / byte(steps)
+		r := delta % byte(steps)
 		var n int
 		for n = 1; n < s; n++ {
 			plusr := byte(0)
@@ -43,6 +42,13 @@ func gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
 		}
 	}
 	return gr
+}
+
+// Randcolor returns a []byte with pseudo-random red, green, blue, alpha
+func Randcolor() []byte {
+	var i []byte = make([]byte, 4)
+	_, _ = fastrand.Read(i)
+	return i
 }
 
 // Randpx uses bytedance fastrand to generate pixelcount random RGB colors.
@@ -56,33 +62,9 @@ func Randpx(pixelcount uint) []byte {
 	utils.CheckPants(err)
 	return b
 }
-
-// randcolors returns quantity colors requested
-func randcolors(size int) []color.RGBA {
-	var cs []color.RGBA = make([]color.RGBA, size)
-	for i := range size {
-		cs[i] = Randcolor()
-	}
-	return cs
-}
-
-// Randfade generates gradient between random color and black in `stepcount` steps
-// TODO rewrite to use colorchange struct
-func Randfade(stepcount uint8) []color.RGBA {
-	var cs []color.RGBA = make([]color.RGBA, stepcount)
-	cs[0] = Randcolor()
-	//fade := make([]byte, 4)
-	for i := uint8(1); i < stepcount; i++ {
-
-	}
-	return cs
-}
-
-// Randcolor returns a color.RGBA with pseudo-random red, green, blue, alpha
-func Randcolor() color.RGBA {
-	var i []byte = make([]byte, 4)
-	_, _ = rand.Read(i)
-	return color.RGBA{i[0], i[1], i[2], i[3]}
+func imagenoise(img *ebiten.Image) {
+	area := uint(img.Bounds().Dx() * img.Bounds().Dy())
+	img.WritePixels(Randpx(area))
 }
 
 //======================================================

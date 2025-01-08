@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 // =======================
@@ -16,21 +17,8 @@ type entityProperties interface {
 	SetProperties()
 }
 
-// entityState holds information on an entity state
-// as well as information to use in transitioning to other states
-type entityState interface {
-	trigger()
-	update()
-}
-type stateManager interface {
-	Define()
-}
-
-// REVIEW might want to actually make the Entity just separate from  entityProperties, entityState.
-
 // Entity interface for all game entities.
 type Entity interface {
-	Defaults()
 	EmitEntity()
 }
 
@@ -51,38 +39,37 @@ type GridEntity struct {
 	img       *ebiten.Image
 	subs      []ebiten.Image
 	r         image.Rectangle
-	op        *ebiten.DrawImageOptions
+	op        ebiten.DrawImageOptions
 	set, draw bool
+}
+
+// TextEntity for defining and drawing text
+type TextEntity struct {
+	textFaceSource *text.GoTextFaceSource
 }
 
 // MapEntity planned for array of instances of entity with set locations
 type MapEntity struct {
 }
 
-// Defaults for entity type
-func (grid GridEntity) Defaults() {
-	width := (3 * pixWidth) / 4
-	height := (3 * pixHeight) / 4
-	grid.img = ebiten.NewImage(width, height)
-	grid.op = &ebiten.DrawImageOptions{}
-	grid.op.GeoM.Translate(float64((pixWidth-width)/2), float64((pixHeight-height)/2))
-	grid.img.Fill(color.Gray{})
-	grid.set = true
-}
-
 // ?-------------------byval ok?
 func makeGridDefault() GridEntity {
+	width := (3 * gameWidth) / 4
+	height := (3 * gameHeight) / 4
 	grid := GridEntity{
-		img: ebiten.NewImage((3*pixWidth)/4, (3*pixHeight)/4),
-		op:  &ebiten.DrawImageOptions{},
+		img: ebiten.NewImage(width, height),
+		op:  ebiten.DrawImageOptions{},
 		set: true,
 	}
-	width := (3 * pixWidth) / 4
-	height := (3 * pixHeight) / 4
-
-	grid.op.GeoM.Translate(float64((pixWidth-width)/2), float64((pixHeight-height)/2))
-	grid.img.Fill(color.Gray{})
+	grid.op.GeoM.Translate(float64((gameWidth-width)/2), float64((gameHeight-height)/2))
+	grid.img.Fill(color.RGBA{R: 155, G: 155, B: 165, A: 255})
 	return grid
+}
+func borderFill(grid *GridEntity) {
+	//TODO
+}
+func resetGrid(grid *GridEntity) {
+	//TODO
 }
 
 // SetProperties of BaseEntity object

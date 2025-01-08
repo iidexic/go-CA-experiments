@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 
+	"github.com/ebitenui/ebitenui"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -17,10 +18,10 @@ const (
 )
 
 var (
-	fillcolor   color.RGBA
-	latch       bool = true
-	tick, frame uint = 0, 0
-	layoutCount int  = 0
+	bgcolor     color.RGBA = color.RGBA{32, 29, 31, 255}
+	latch       bool       = true
+	tick, frame uint       = 0, 0
+	layoutCount int        = 0
 	sqri        *ebiten.Image
 	sqrobj      *testobj
 )
@@ -33,7 +34,6 @@ type testobj struct {
 }
 
 // ==================================
-// My Functions (temporary)
 // ==================================
 
 func (obj *testobj) genSquare() {
@@ -44,69 +44,61 @@ func (obj *testobj) genSquare() {
 	obj.img = ebiten.NewImageWithOptions(obj.r, &options)
 	obj.op = &ebiten.DrawImageOptions{}
 
-	obj.img.WritePixels()
-
 	testMove(obj.op)
 	obj.set = true
-}
-
-func imagenoise(img *ebiten.Image) {
-	area := uint(img.Bounds().Dx() * img.Bounds().Dy())
-	img.WritePixels(Randpx(area))
 }
 
 func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
-func inputActions() {
+func inputActions(g *Game) {
 	_, wy := ebiten.Wheel()
 	if wy > 0 {
 
 		latch = false
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyE) {
-		g.maingrid.Defaults()
+
 		g.maingrid.draw = true
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyR) {
-		imagenoise(sqrobj.img)
+
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		imagenoise(sqrobj.img)
 		testMove(sqrobj.op)
 	}
 }
 
-// TODO - determine best  update/draw relation
-// ==================================
-// ANCHOR ====[Ebiten game base]====
 // ==================================
 
 // Game struct - ebiten
-type Game struct {
+type Game struct { //^-GAME STRUCT-
 	maingrid GridEntity
+	gui      *ebitenui.UI
 }
 
 // Update game - game logic, assume locked at 60TPS.
-func (g *Game) Update() error {
+func (g *Game) Update() error { //^UPDATE
 	defer debugMsgControl()
 	countTicks()
-	inputActions()
+	inputActions(g)
 	return nil
 }
 
 // Draw screen
-func (g *Game) Draw(screen *ebiten.Image) {
+func (g *Game) Draw(screen *ebiten.Image) { //^DRAW
 	countFrames()
 
 	if !latch { //FIXME - replace this
 		sqrobj.genSquare()
 		latch = true
 	}
-
-	screen.Fill(fillcolor)
+	screen.Fill(bgcolor)
 	if sqrobj.set {
 		screen.DrawImage(sqrobj.img, sqrobj.op)
 	}
+	screen.DrawImage(g.maingrid.img, &g.maingrid.op)
 	ebitenutil.DebugPrintAt(screen, dbg.output, 120, 0)
 
 }
@@ -126,8 +118,9 @@ func main() {
 
 	ebiten.SetWindowSize(pixWidth, pixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
-
-	if err := ebiten.RunGame(&Game{maingrid: makeGridDefault()}); err != nil {
+	g := &Game{}
+	g.maingrid = makeGridDefault()
+	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
 }
