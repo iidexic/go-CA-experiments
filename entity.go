@@ -43,6 +43,8 @@ type GridEntity struct {
 	set, draw bool
 }
 
+func (g *GridEntity) populateGrid(size, spacing int) func() gen
+
 // TextEntity for defining and drawing text
 type TextEntity struct {
 	textFaceSource *text.GoTextFaceSource

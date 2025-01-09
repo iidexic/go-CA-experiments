@@ -1,13 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"log"
 
-	"github.com/ebitenui/ebitenui"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"golang.org/x/image/font/gofont/goregular"
 )
 
 // globals and Structs (temporary)
@@ -75,7 +77,6 @@ func inputActions(g *Game) {
 // Game struct - ebiten
 type Game struct { //^-GAME STRUCT-
 	maingrid GridEntity
-	gui      *ebitenui.UI
 }
 
 // Update game - game logic, assume locked at 60TPS.
@@ -115,7 +116,7 @@ func main() {
 	sqrobj = &testobj{}
 	sqrobj.img = ebiten.NewImage(1, 1)
 	sqrobj.set = false
-
+	s, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
 	ebiten.SetWindowSize(pixWidth, pixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
 	g := &Game{}
@@ -124,3 +125,10 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+/* etxt package text rendering.
+I am just going to try ebiten's builtin
+	g.txt = etxt.NewRenderer()
+g.txt.SetFont(lbrtmono.Font())
+g.txt.Utils().SetCache8MiB()
+*/
