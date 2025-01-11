@@ -117,6 +117,10 @@ func main() {
 	sqrobj.img = ebiten.NewImage(1, 1)
 	sqrobj.set = false
 	s, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
+	_ = s
+	if err != nil {
+		log.Panicf("Font did not load %s", err)
+	}
 	ebiten.SetWindowSize(pixWidth, pixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
 	g := &Game{}

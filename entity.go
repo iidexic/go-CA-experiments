@@ -5,26 +5,10 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 // =======================
-// INTERFACES
-// =======================
-
-// entityProperties holds values corresponding to game entity
-type entityProperties interface {
-	SetProperties()
-}
-
-// Entity interface for all game entities.
-type Entity interface {
-	EmitEntity()
-}
-
-// =======================
 // STRUCTS
-// =======================
 
 // BaseEntity default entity type/debug entity
 type BaseEntity struct {
@@ -43,18 +27,7 @@ type GridEntity struct {
 	set, draw bool
 }
 
-func (g *GridEntity) populateGrid(size, spacing int) func() gen
-
-// TextEntity for defining and drawing text
-type TextEntity struct {
-	textFaceSource *text.GoTextFaceSource
-}
-
-// MapEntity planned for array of instances of entity with set locations
-type MapEntity struct {
-}
-
-// ?-------------------byval ok?
+// ?-------------------	byval ok?????
 func makeGridDefault() GridEntity {
 	width := (3 * gameWidth) / 4
 	height := (3 * gameHeight) / 4
@@ -67,15 +40,31 @@ func makeGridDefault() GridEntity {
 	grid.img.Fill(color.RGBA{R: 155, G: 155, B: 165, A: 255})
 	return grid
 }
-func borderFill(grid *GridEntity) {
-	//TODO
-}
-func resetGrid(grid *GridEntity) {
-	//TODO
-}
 
-// SetProperties of BaseEntity object
-func (e *BaseEntity) SetProperties(i int) {
-	_ = i
+// ======================================================
+// ======================================================
+// * unused
+/*
+// -----------------------
+// INTERFACES
 
-}
+// entityProperties holds values corresponding to game entity
+type entityProperties interface {SetProperties()}
+
+// Entity interface for all game entities.
+type Entity interface {Emit()}
+
+// -----------------------
+// Structs
+
+// TextEntity for defining and drawing text
+type TextEntity struct {textFaceSource *text.GoTextFaceSource}
+
+// MapEntity planned for array of instances of entity with set locations
+type MapEntity struct {}
+
+// -----------------------
+// Functions
+func borderFill(grid *GridEntity) {} //TODO
+func resetGrid(grid *GridEntity) {} //TODO
+*/
