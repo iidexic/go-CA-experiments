@@ -1,31 +1,36 @@
-package main
+package gfx
 
 import (
 	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/iidexic/go-CA-experiments/utils"
+	"github.com/iidexic/go-CA-experiments/util"
 )
 
 // Gradientbytes makes a gradient from color c1 to color c2 in number of steps
-// currently annotated so I can remember what I did
-func gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
+// Loop operation: (happens once for  each byte in color)
+//
+//	set start and end point (c1, c2 respectively)
+//	calculate difference between c2, c1 and startpt
+func Gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
 	//default 4 steps, to avoid divide by 0
 	if steps == 0 {
 		steps = 4
 	}
-	//slice+type prep
+	//variable prep
 	var delta byte
-	gr := make([]byte, (steps+1)*4)
-	s := int(steps) //arg as uint8 to control range.
+	gr := make([]byte, (steps+1)*4) //steps = transitions hence +1. *4 for R,G,B,A
+	isteps := int(steps)            //arg as uint8 to control range.
+	//Loop through bytes in color (will run 4x, for R,G,B,A)
 	for i, v := range c2 {
-
+		//Load start color (c1) and end color (c2)
 		gr[i] = c1[i]
-		gr[s*i] = c2[i]
+		gr[isteps*i] = c2[i]
 		//--------------
 		var cstart byte
+		//hardcode absolute val to avoid underflow:
 		if v >= c1[i] {
 			delta = v - c1[i]
-			cstart = c1[i]
+			cstart = c1[i] //! Is this correct?
 		} else {
 			delta = c1[i] - v
 			cstart = v
@@ -33,7 +38,7 @@ func gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
 		d := delta / byte(steps)
 		r := delta % byte(steps)
 		var n int
-		for n = 1; n < s; n++ {
+		for n = 1; n < isteps; n++ {
 			plusr := byte(0)
 			if byte(n) <= r {
 				plusr++
@@ -59,10 +64,12 @@ func Randpx(pixelcount uint) []byte {
 	for i := 3; i < len(b); i += 4 {
 		b[i] = 255
 	}
-	utils.CheckPants(err)
+	util.CheckPants(err)
 	return b
 }
-func imagenoise(img *ebiten.Image) {
+
+// Imagenoise directly generates and writes rand colors to existing ebiten img.
+func Imagenoise(img *ebiten.Image) {
 	area := uint(img.Bounds().Dx() * img.Bounds().Dy())
 	img.WritePixels(Randpx(area))
 }

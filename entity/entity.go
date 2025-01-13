@@ -1,4 +1,4 @@
-package main
+package entity
 
 import (
 	"image"
@@ -20,24 +20,23 @@ type BaseEntity struct {
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	img       *ebiten.Image
-	subs      []ebiten.Image
-	r         image.Rectangle
-	op        ebiten.DrawImageOptions
-	set, draw bool
+	Img       *ebiten.Image
+	r         image.Rectangle //intended to house width/height. Not needed atm
+	Op        ebiten.DrawImageOptions
+	Set, Draw bool
 }
 
-// ?-------------------	byval ok?????
-func makeGridDefault() GridEntity {
-	width := (3 * gameWidth) / 4
-	height := (3 * gameHeight) / 4
+// MakeGridDefault generates base CA grid
+func MakeGridDefault(gWidth, gHeight int) GridEntity { // ? no ptr ok on GridEntity????
+	width := (3 * gWidth) / 4
+	height := (3 * gHeight) / 4
 	grid := GridEntity{
-		img: ebiten.NewImage(width, height),
-		op:  ebiten.DrawImageOptions{},
-		set: true,
+		Img: ebiten.NewImage(width, height),
+		Op:  ebiten.DrawImageOptions{},
+		Set: true,
 	}
-	grid.op.GeoM.Translate(float64((gameWidth-width)/2), float64((gameHeight-height)/2))
-	grid.img.Fill(color.RGBA{R: 155, G: 155, B: 165, A: 255})
+	grid.Op.GeoM.Translate(float64((gWidth-width)/2), float64((gHeight-height)/2))
+	grid.Img.Fill(color.RGBA{R: 155, G: 155, B: 165, A: 255})
 	return grid
 }
 
