@@ -39,18 +39,6 @@ type testobj struct {
 // ==================================
 // ==================================
 
-func (obj *testobj) genSquare() {
-
-	//*image.Rect (x0,y0)(x1,y1) does not translate. only (x1-x0, y1-y0) is used
-	obj.r = image.Rect(0, 0, 100, 100)
-	options := ebiten.NewImageOptions{}
-	obj.img = ebiten.NewImageWithOptions(obj.r, &options)
-	obj.op = &ebiten.DrawImageOptions{}
-
-	testMove(obj.op)
-	obj.set = true
-}
-
 func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
@@ -78,6 +66,9 @@ type Game struct { //^-GAME STRUCT-
 func (g *Game) Update() error { //^UPDATE
 	defer util.DebugMsgControl(GameWidth, GameHeight, PixWidth, PixHeight)
 	util.DbgCountTicks()
+	util.DbgCaptureInput()
+	//the input stuff ain't working. Checking in Debug
+	//input.UpdateKeys()
 	inputActions(g)
 	return nil
 }
@@ -96,6 +87,9 @@ func (g *Game) Draw(screen *ebiten.Image) { //^DRAW
 // Layout of game window (screen/game)
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	util.DbgCountLayout()
+	//TODO: Write functionality for scaling.
+	// i.e. : Maintain Ratio, relative screen position
+	// and maintain size of game area!! (i.e. not adding additional pixels to sim  by resizing)
 	return GameWidth, GameHeight
 }
 
@@ -113,10 +107,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-
-/* etxt package text rendering.
-I am just going to try ebiten's builtin
-	g.txt = etxt.NewRenderer()
-g.txt.SetFont(lbrtmono.Font())
-g.txt.Utils().SetCache8MiB()
-*/

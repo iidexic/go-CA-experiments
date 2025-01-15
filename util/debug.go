@@ -14,9 +14,11 @@ type debugMessager interface {
 type msgGen func() string
 type msgScreenGen func(int, int) string
 type showDebugInfo struct { // bools toggle what gets put into debug msg. len(Output)
-	showDebug, tps, tick, screen, layouts, windowPX, frames, fps bool
-	len, pixW, pixH, gameW, gameH                                int
-	Output                                                       string
+	showDebug, tps, tick, screen, layouts, windowPX, frames, fps, keys bool
+	len, pixW, pixH, gameW, gameH                                      int
+	Output                                                             string
+	keysAppend                                                         [30]ebiten.Key
+	keysDown                                                           []ebiten.Key
 }
 
 var (
@@ -26,12 +28,13 @@ var (
 	Dbg showDebugInfo = showDebugInfo{
 		showDebug: true,
 		tps:       true,
-		tick:      true,
+		tick:      false,
 		frames:    false,
 		screen:    false,
 		layouts:   false,
 		windowPX:  false,
 		fps:       true,
+		keys:      true,
 		len:       0,
 		gameW:     0,
 		gameH:     0,
@@ -70,8 +73,8 @@ func DebugMsgControl(gameW, gameH, pixW, pixH int) {
 		}
 
 	}
-	dbgPack := []bool{Dbg.tps, Dbg.tick, Dbg.screen, Dbg.windowPX, Dbg.frames, Dbg.layouts, Dbg.fps}
-	genPack := []msgGen{debugTPS, debugTick10, debugScreen, debugPX, debugFrames10, debugLayouts10, debugFPS}
+	dbgPack := []bool{Dbg.tps, Dbg.tick, Dbg.screen, Dbg.windowPX, Dbg.frames, Dbg.layouts, Dbg.fps, Dbg.keys}
+	genPack := []msgGen{debugTPS, debugTick10, debugScreen, debugPX, debugFrames10, debugLayouts10, debugFPS, debugKeys}
 	Dbg.Output = stringMerge(dbgPack, genPack)
 }
 
@@ -117,8 +120,16 @@ func debugPX() string {
 func debugLayouts10() string {
 	return fmt.Sprintf("| layout: %d ", layoutCount/10)
 }
+func debugKeys() string {
 
-// CountFrames will run each draw call. Max at 2800 (arbitrary) then resets
+	var keysStr string = "\n"
+	for _, v := range Dbg.keysDown {
+		keysStr += v.String()
+	}
+	return keysStr
+}
+
+// DbgCountFrames will run each draw call. Max at 2800 (arbitrary) then resets
 func DbgCountFrames() {
 	frame++
 	if frame >= 2800 {
@@ -126,7 +137,7 @@ func DbgCountFrames() {
 	}
 }
 
-// CountLayout will run each Layout call. Max at 2800 (arbitrary) then resets
+// DbgCountLayout will run each Layout call. Max at 2800 (arbitrary) then resets
 func DbgCountLayout() {
 	layoutCount++
 	if layoutCount >= 2800 {
@@ -134,10 +145,15 @@ func DbgCountLayout() {
 	}
 }
 
-// CountTicks will run each Update call. Max at 1800 (arbitrary) then resets
+// DbgCountTicks will run each Update call. Max at 1800 (arbitrary) then resets
 func DbgCountTicks() {
 	tick++
 	if tick >= 1800 {
 		tick = 0
 	}
+}
+
+// DbgCaptureInput runs in Update to get pressed keys for debug string
+func DbgCaptureInput() {
+	Dbg.keysDown = inpututil.AppendPressedKeys(Dbg.keysAppend[:])
 }

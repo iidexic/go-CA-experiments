@@ -33,8 +33,45 @@ func trialRandbytes(n int) ([]byte, error) {
 	return b, e
 }
 
-func trialFastRandbytes(n int) ([]byte, error) {
+func trialFastrandbytes(n int) ([]byte, error) {
 	b := make([]byte, n)
 	_, e := fastrand.Read(b)
 	return b, e
+}
+
+func trialSliceRaw(n int, b0, b1 byte) []byte {
+	var slc []byte = []byte{}
+	slc[0] = b0
+	slc[1] = b1
+	for i := 2; i < n+1; i++ {
+		slc[i] = slc[i-1] << slc[i-2]
+	}
+	return slc
+}
+func trialSliceMake(n int, b0, b1 byte) []byte {
+	slc := make([]byte, n+1)
+	slc[0] = b0
+	slc[1] = b1
+	for i := 2; i < n+1; i++ {
+		slc[i] = slc[i-1] << slc[i-2]
+	}
+	return slc
+}
+func trialSliceRawInverse(n int, b0, b1 byte) []byte {
+	var slc []byte = []byte{}
+	slc[n+1] = b0
+	slc[n] = b1
+	for i := n - 1; i >= 0; i-- {
+		slc[i] = slc[i-1] << slc[i-2]
+	}
+	return slc
+}
+func trialSliceMakeInverse(n int, b0, b1 byte) []byte {
+	slc := make([]byte, n+2)
+	slc[n+1] = b0
+	slc[n] = b1
+	for i := n - 1; i >= 0; i-- {
+		slc[i] = slc[i-1] << slc[i-2]
+	}
+	return slc
 }
