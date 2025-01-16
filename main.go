@@ -7,7 +7,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/iidexic/go-CA-experiments/entity"
 	"github.com/iidexic/go-CA-experiments/gfx"
@@ -25,7 +24,6 @@ var (
 	PixHeight   int  = 720
 	GameWidth   int  = 640
 	GameHeight  int  = 360
-	latch       bool = true
 	tick, frame uint = 0, 0
 	layoutCount int  = 0
 )
@@ -37,25 +35,42 @@ func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
 func inputActions(g *Game) {
-
+	//cursX,cursY:=ebiten.CursorPosition()
 	_, wy := ebiten.Wheel()
 	if wy > 0 {
-
-		latch = false
+		//mouseWheelUp
+	} else if wy < 0 {
+		//mouseWheelDown
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
-		g.maingrid.Draw = !g.maingrid.Draw
+	for _, k := range input.GetJustPressedKeys() {
+		g.callKey(k)
 	}
 
 }
-func tempKeyAction(ebiten.Key)
+func (g *Game) callKey(k ebiten.Key) {
+	switch k {
+	case ebiten.KeyG:
+		g.maingrid.Draw = !g.maingrid.Draw
+	case ebiten.KeyE:
+
+	case ebiten.KeyR:
+		g.maingrid.Pixels = gfx.Randpx(g.maingrid.Area)
+		g.maingrid.Img.WritePixels(gfx.Randpx(g.maingrid.Area))
+	case ebiten.KeyQ:
+
+	case ebiten.KeyEnter:
+
+	}
+
+}
 
 // ==================================
 
 // Game struct - ebiten
 type Game struct { //^-GAME STRUCT-
-	maingrid entity.GridEntity
-	pal      []color.RGBA
+	maingrid      *entity.GridEntity
+	pal           []color.RGBA
+	RunSimulation int
 }
 
 // Update game - game logic, assume locked at 60TPS.
@@ -104,10 +119,13 @@ func main() {
 
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
-	g := &Game{}
-	g.maingrid = entity.MakeGridDefault(GameWidth, GameHeight)
-	g.pal = gfx.Palette
-
+	g := &Game{
+		RunSimulation: 0,
+		maingrid:      entity.MakeGridDefault(GameWidth, GameHeight),
+		pal:           gfx.Palette,
+	}
+	//g.maingrid = entity.MakeGridDefault(GameWidth, GameHeight)
+	//g.pal = gfx.Palette
 	//^====================================
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)

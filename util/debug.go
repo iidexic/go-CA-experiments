@@ -17,7 +17,19 @@ type showDebugInfo struct { // bools toggle what gets put into debug msg. len(Ou
 	Output                                                                               string
 	keysAppend                                                                           []ebiten.Key
 	keysDown                                                                             []ebiten.Key
+	SelectDebug                                                                          []int
 }
+
+const (
+	showTPS int = iota
+	showTick
+	showFrames
+	showScreen
+	showLayouts
+	showWindowPX
+	showFPS
+	showKhandlr
+)
 
 // For now this is working, in the future maybe switch to iota+switch or select loop
 var (
@@ -25,23 +37,51 @@ var (
 	gWidth, gHeight, pWidth, pHeight int
 	//Dbg is used to toggle desired debug output, receive screen info, and houses the final output
 	Dbg showDebugInfo = showDebugInfo{
-		showDebug:  true,
-		tps:        true,
-		tick:       false,
-		frames:     false,
-		screen:     false,
-		layouts:    false,
-		windowPX:   false,
-		fps:        true,
-		khandlr:    true,
-		len:        0,
-		gameW:      0,
-		gameH:      0,
-		pixW:       0,
-		pixH:       0,
-		keysAppend: make([]ebiten.Key, 0, 12),
-		Output:     ""}
+		showDebug:   true,
+		tps:         true,
+		tick:        false,
+		frames:      false,
+		screen:      false,
+		layouts:     false,
+		windowPX:    false,
+		fps:         true,
+		khandlr:     true,
+		len:         0,
+		gameW:       0,
+		gameH:       0,
+		pixW:        0,
+		pixH:        0,
+		keysAppend:  make([]ebiten.Key, 0, 12),
+		Output:      "",
+		SelectDebug: make([]int, 0, 12)}
 )
+
+// DebugBuildOutput is the NEW DEBUG MESSAGE GENERATOR AND PRINTER
+func DebugBuildOutput(gameW, gameH, pixW, pixH int) {
+	Dbg.gameW = gameW
+	Dbg.gameH = gameH
+	Dbg.pixW = pixW
+	Dbg.pixH = pixH
+	if !Dbg.showDebug {
+		Dbg.Output = "debug should be off"
+	}
+	//^ Debug Writer/Function Store
+	Dbg.Output = ""
+	for _, v := range Dbg.SelectDebug {
+		switch v {
+		case showTPS:
+
+		case showTick:
+		case showFrames:
+		case showScreen:
+		case showLayouts:
+		case showWindowPX:
+		case showFPS:
+		case showKhandlr:
+		}
+	}
+
+} //NOT DONE YET!
 
 // DebugMsgControl Builds the debug message
 func DebugMsgControl(gameW, gameH, pixW, pixH int) {
