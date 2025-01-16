@@ -6,44 +6,42 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/iidexic/go-CA-experiments/input"
 )
 
-type debugMessager interface {
-	msgGen | msgScreenGen
-}
 type msgGen func() string
 type msgScreenGen func(int, int) string
 type showDebugInfo struct { // bools toggle what gets put into debug msg. len(Output)
-	showDebug, tps, tick, screen, layouts, windowPX, frames, fps, keys bool
-	len, pixW, pixH, gameW, gameH                                      int
-	Output                                                             string
-	keysAppend                                                         [30]ebiten.Key
-	keysDown                                                           []ebiten.Key
+	showDebug, tps, tick, screen, layouts, windowPX, frames, fps, keys, keysQty, khandlr bool
+	len, pixW, pixH, gameW, gameH                                                        int
+	Output                                                                               string
+	keysAppend                                                                           []ebiten.Key
+	keysDown                                                                             []ebiten.Key
 }
 
+// For now this is working, in the future maybe switch to iota+switch or select loop
 var (
 	frame, tick, layoutCount         int
 	gWidth, gHeight, pWidth, pHeight int
 	//Dbg is used to toggle desired debug output, receive screen info, and houses the final output
 	Dbg showDebugInfo = showDebugInfo{
-		showDebug: true,
-		tps:       true,
-		tick:      false,
-		frames:    false,
-		screen:    false,
-		layouts:   false,
-		windowPX:  false,
-		fps:       true,
-		keys:      true,
-		len:       0,
-		gameW:     0,
-		gameH:     0,
-		pixW:      0,
-		pixH:      0,
-		Output:    ""}
+		showDebug:  true,
+		tps:        true,
+		tick:       false,
+		frames:     false,
+		screen:     false,
+		layouts:    false,
+		windowPX:   false,
+		fps:        true,
+		khandlr:    true,
+		len:        0,
+		gameW:      0,
+		gameH:      0,
+		pixW:       0,
+		pixH:       0,
+		keysAppend: make([]ebiten.Key, 0, 12),
+		Output:     ""}
 )
-
-// TODO: make proper input handling.
 
 // DebugMsgControl Builds the debug message
 func DebugMsgControl(gameW, gameH, pixW, pixH int) {
@@ -73,8 +71,18 @@ func DebugMsgControl(gameW, gameH, pixW, pixH int) {
 		}
 
 	}
-	dbgPack := []bool{Dbg.tps, Dbg.tick, Dbg.screen, Dbg.windowPX, Dbg.frames, Dbg.layouts, Dbg.fps, Dbg.keys}
-	genPack := []msgGen{debugTPS, debugTick10, debugScreen, debugPX, debugFrames10, debugLayouts10, debugFPS, debugKeys}
+	dbgPack := []bool{
+		Dbg.tps, Dbg.tick,
+		Dbg.screen, Dbg.windowPX,
+		Dbg.frames, Dbg.layouts,
+		Dbg.fps, Dbg.khandlr,
+		Dbg.keys, Dbg.keysQty}
+	genPack := []msgGen{
+		debugTPS, debugTick10,
+		debugScreen, debugPX,
+		debugFrames10, debugLayouts10,
+		debugFPS, debugKeyHandler,
+		debugKeys, debugKeysQty}
 	Dbg.Output = stringMerge(dbgPack, genPack)
 }
 
@@ -120,13 +128,25 @@ func debugPX() string {
 func debugLayouts10() string {
 	return fmt.Sprintf("| layout: %d ", layoutCount/10)
 }
-func debugKeys() string {
+func debugKeyHandler() string {
+	kqty := 0
+	kstr := ""
+	keys := input.KeysOut()
+	for _, v := range *keys {
+		kstr += v.String()
+	}
+	return fmt.Sprintf("\n| KBHandl[qty %d,len %d]: %s", kqty, len(*keys), kstr)
+}
 
+func debugKeys() string {
 	var keysStr string = "\n"
 	for _, v := range Dbg.keysDown {
 		keysStr += v.String()
 	}
 	return keysStr
+}
+func debugKeysQty() string {
+	return fmt.Sprintf(" | len key: %d", len(Dbg.keysDown))
 }
 
 // DbgCountFrames will run each draw call. Max at 2800 (arbitrary) then resets
@@ -155,5 +175,5 @@ func DbgCountTicks() {
 
 // DbgCaptureInput runs in Update to get pressed keys for debug string
 func DbgCaptureInput() {
-	Dbg.keysDown = inpututil.AppendPressedKeys(Dbg.keysAppend[:])
+	Dbg.keysDown = inpututil.AppendPressedKeys(Dbg.keysAppend[:0])
 }

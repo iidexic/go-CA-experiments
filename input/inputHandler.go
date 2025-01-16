@@ -9,51 +9,49 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-// !===Temp Input Handler==================================
-var keyAssignments []func()
-
-//!=======================================================
 //==Intended Kb Handler - Waiting on help=================
 
-// HandlerKBM Manages KB + Mouse Inputs
+// Keys is attempt at non-struct kb handler
+var keysPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
+
+// GetInKB is non-Handler Key Append.
+func GetInKB() {
+	keysPressed = inpututil.AppendPressedKeys(keysPressed[:0])
+}
+
+// KeysOut (Debug use)
+func KeysOut() *[]ebiten.Key {
+	return &keysPressed
+}
+
+// *=======Handler=========
+
+// handlerKBM Manages KB + Mouse Inputs
 type handlerKBM struct {
 	kbDown, kbUp []ebiten.Key
 	msBtn        []ebiten.MouseButton
 }
 
 // *temp-----
-var hkey handlerKBM = handlerKBM{
-	kbDown: make([]ebiten.Key, 159),
-	kbUp:   make([]ebiten.Key, 159),
+// InitMain is optional  init for  when handler is
+// something, but anyway I am still not understanding this look at diff w-debug
+func (h handlerKBM) InitMain() {
+	h.kbDown = make([]ebiten.Key, 16)
+	_ = h.kbDown
 }
 
+// GetState updates handler with held keys
 func (h *handlerKBM) GetState() {
-	//h.kbDown = make([]ebiten.Key, 6)
-	//h.kbUp = make([]ebiten.Key, 6)
-	inpututil.AppendPressedKeys(h.kbDown)
-	inpututil.AppendJustReleasedKeys(h.kbUp)
-
-	// for future brain remembering: we are wiping every time
-	//totally thought this was gonna work
-	// for i := 0; h.kbDown[i] != 0; i++ {
+	inpututil.AppendPressedKeys(h.kbDown[:0])
 	for i, v := range h.kbDown {
-		if v > 0 {
-			fmt.Printf("KeyDown: index=%d, key# %d key:%s\n", i, v, ebiten.Key(v).String())
-		}
+		fmt.Println("got here 2")
+		fmt.Printf("KeyDown: index=%d, key# %d key:%s\n", i, v, ebiten.Key(v).String())
 	}
 }
 
-// UpdateKeys is test func to trigger the internal global handler object (hkey) GetState method
-func UpdateKeys() {
-	hkey.GetState()
+// getHandler returns initialized inputHandler
+func getHandler() handlerKBM {
+	return handlerKBM{
+		kbDown: make([]ebiten.Key, 0, 16),
+		kbUp:   make([]ebiten.Key, 0, 16)}
 }
-
-//maybe someday
-/*
-	padID := make([]ebiten.GamepadID, 6)
-	ebiten.AppendGamepadIDs(padID)
-
-	//inPad := make([]ebiten.GamepadButton, 60)
-	inpututil.AppendPressedGamepadButtons()
-	inpututil.AppendPressedStandardGamepadButtons()
-*/

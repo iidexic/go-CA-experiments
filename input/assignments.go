@@ -33,3 +33,10 @@ func fnE() {
 func fnR() {
 
 }
+
+func DefaultAssignments() {
+
+}
+func Reassign() {
+
+}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"image"
 	"image/color"
 	"log"
 
@@ -10,6 +9,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/iidexic/go-CA-experiments/entity"
+	"github.com/iidexic/go-CA-experiments/gfx"
+	"github.com/iidexic/go-CA-experiments/input"
 	"github.com/iidexic/go-CA-experiments/util"
 	"golang.org/x/image/font/gofont/goregular"
 )
@@ -19,22 +20,14 @@ import (
 
 // :)
 var (
-	PixWidth    int        = 1280
-	PixHeight   int        = 720
-	GameWidth   int        = 640
-	GameHeight  int        = 360
-	bgcolor     color.RGBA = color.RGBA{32, 29, 31, 255}
-	latch       bool       = true
-	tick, frame uint       = 0, 0
-	layoutCount int        = 0
+	PixWidth    int  = 1280
+	PixHeight   int  = 720
+	GameWidth   int  = 640
+	GameHeight  int  = 360
+	latch       bool = true
+	tick, frame uint = 0, 0
+	layoutCount int  = 0
 )
-
-type testobj struct {
-	img *ebiten.Image
-	r   image.Rectangle
-	op  *ebiten.DrawImageOptions
-	set bool
-}
 
 // ==================================
 // ==================================
@@ -60,15 +53,17 @@ func inputActions(g *Game) {
 // Game struct - ebiten
 type Game struct { //^-GAME STRUCT-
 	maingrid entity.GridEntity
+	pal      []color.RGBA
 }
 
 // Update game - game logic, assume locked at 60TPS.
 func (g *Game) Update() error { //^UPDATE
 	defer util.DebugMsgControl(GameWidth, GameHeight, PixWidth, PixHeight)
 	util.DbgCountTicks()
-	util.DbgCaptureInput()
+	input.GetInKB()
+	//util.DbgCaptureInput()
 	//the input stuff ain't working. Checking in Debug
-	//input.UpdateKeys()
+
 	inputActions(g)
 	return nil
 }
@@ -76,8 +71,8 @@ func (g *Game) Update() error { //^UPDATE
 // Draw screen
 func (g *Game) Draw(screen *ebiten.Image) { //^DRAW
 	util.DbgCountFrames()
-
-	screen.Fill(bgcolor)
+	util.DbgCaptureInput()
+	screen.Fill(g.pal[0])
 
 	screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 120, 0)
@@ -94,15 +89,22 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
+	//^=====| INITIALIZATION IN MAIN |=====
 	s, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
 	_ = s
 	if err != nil {
 		log.Panicf("Font did not load %s", err)
 	}
+
+	//--- temp above here ---
+
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
 	g := &Game{}
 	g.maingrid = entity.MakeGridDefault(GameWidth, GameHeight)
+	g.pal = gfx.Palette
+
+	//^====================================
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
