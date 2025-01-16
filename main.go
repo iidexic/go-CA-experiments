@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/iidexic/go-CA-experiments/entity"
 	"github.com/iidexic/go-CA-experiments/gfx"
@@ -36,17 +37,18 @@ func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
 func inputActions(g *Game) {
+
 	_, wy := ebiten.Wheel()
 	if wy > 0 {
 
 		latch = false
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyE) {
-
-		g.maingrid.Draw = true
+	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
+		g.maingrid.Draw = !g.maingrid.Draw
 	}
 
 }
+func tempKeyAction(ebiten.Key)
 
 // ==================================
 
@@ -74,7 +76,9 @@ func (g *Game) Draw(screen *ebiten.Image) { //^DRAW
 	util.DbgCaptureInput()
 	screen.Fill(g.pal[0])
 
-	screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
+	if g.maingrid.Draw {
+		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
+	}
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 120, 0)
 
 }

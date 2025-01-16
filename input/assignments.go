@@ -8,35 +8,33 @@ var KEYMAPassignments []func() = []func(){} //this aint happening atm
 
 STRUCTURE
 -----------------
-We are getting ints, we can grab the actual key they are assigned to pretty easily
-- Gonna assume can probably go key str -> int easily as well, will figure out later if comes into play
 
-easiest is to put a bunch of functions in a slice and use the keyboard key as slice
-> Question from here: Will there not be variable Param/Return requirements?
-
-For now I am just going to hardcode functions as they come up.
+For now I am just going to hardcode functions in a switch case as they come up.
 Later I can look at big picture to see if theres a better way
 */ //!SECTION
 
-func fnA() {
+//Started setting up rebinds but that is so not necessary right now.
+//check ebiten's keys.go OR .\util_external\kbdefaults.txt (most likely correct)
 
-}
-func fnS() {
-
-}
-func fnD() {
-
-}
-func fnE() {
-
-}
-func fnR() {
-
-}
-
-func DefaultAssignments() {
-
-}
-func Reassign() {
+// CallKey will return key's bound func()
+//or maybe just make it happen
+//?Also: Is it better to do individual keys for concurrency?
+func CallKey(ikey int) func() {
+	switch ikey {
+	case 0 /*A*/ :
+		return func() {}
+	case 4 /*E*/ :
+		return func() {}
+	case 16 /*Q*/ :
+		return func() {}
+	case 17 /*R*/ :
+		return func() {}
+	case 54 /*enter*/ :
+		return func() {}
+	case 116 /*space*/ :
+		return func() {}
+	default:
+		return func() {}
+	}
 
 }
