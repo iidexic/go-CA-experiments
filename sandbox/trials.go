@@ -16,7 +16,7 @@ var seedset [16]string = [16]string{"g4vJqSiKnYRi6378JFOV1rczgpMkZkCn", "f6I9rcA
 // ^ This file used to test different approaches.
 // * using main to make things easier. cd into testing to run
 func main() {
-	fmt.Println("we are trialing")
+	trialShifting()
 }
 func byteseed(s32 string) [32]byte {
 	var bs [32]byte
@@ -74,4 +74,23 @@ func trialSliceMakeInverse(n int, b0, b1 byte) []byte {
 		slc[i] = slc[i-1] << slc[i-2]
 	}
 	return slc
+}
+
+func trialShifting() {
+	var b []byte = make([]byte, 36)
+	for i := range b {
+		b[i] = byte(i)
+		//fmt.Printf("%d ",b[i])
+	}
+	fmt.Printf("\nlen = %d\n", len(b))
+	for i := range b {
+		fmt.Printf("(%d -> ", b[i])
+		b[i] = (b[i]) << 3
+		fmt.Printf("%d) ", b[i])
+		if i%10 == 0 {
+			fmt.Println("")
+		}
+	}
+	fmt.Println(b[24])
+	fmt.Printf("\nlen = %d\n", len(b))
 }

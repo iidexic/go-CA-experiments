@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -21,7 +22,7 @@ type showDebugInfo struct { // bools toggle what gets put into debug msg. len(Ou
 }
 
 const (
-	showTPS int = iota
+	showTPS int = iota //0
 	showTick
 	showFrames
 	showScreen
@@ -56,32 +57,58 @@ var (
 		SelectDebug: make([]int, 0, 12)}
 )
 
+// SetValues currently sets screen values for debug display
+func (d *showDebugInfo) SetValues(gameW, gameH, pixW, pixH int) {
+	d.gameH = gameH
+	d.gameW = gameW
+	d.pixH = pixH
+	d.pixW = pixW
+}
+
 // DebugBuildOutput is the NEW DEBUG MESSAGE GENERATOR AND PRINTER
-func DebugBuildOutput(gameW, gameH, pixW, pixH int) {
-	Dbg.gameW = gameW
-	Dbg.gameH = gameH
-	Dbg.pixW = pixW
-	Dbg.pixH = pixH
-	if !Dbg.showDebug {
-		Dbg.Output = "debug should be off"
-	}
+func (d *showDebugInfo) DebugBuildOutput() {
+
 	//^ Debug Writer/Function Store
+	var sb strings.Builder
+	var e error
 	Dbg.Output = ""
+	//outSlice := make([]string, len(d.SelectDebug))
 	for _, v := range Dbg.SelectDebug {
-		switch v {
+		switch v { // can actually do full string assembly in here by using a strings.Builder...
 		case showTPS:
-
+			_, e = sb.WriteString(fmt.Sprintf("| tps: %f ", ebiten.ActualTPS()))
 		case showTick:
+			_, e = sb.WriteString(fmt.Sprintf("| tick: %03d ", tick/10))
 		case showFrames:
+			_, e = sb.WriteString(fmt.Sprintf("| frames: %03d ", frame/10))
 		case showScreen:
+			_, e = sb.WriteString(fmt.Sprintf("| game/screen: %dx%d ", d.gameW, d.gameH))
 		case showLayouts:
+			_, e = sb.WriteString(fmt.Sprintf("| layout: %d ", layoutCount/10))
 		case showWindowPX:
+			_, e = sb.WriteString(fmt.Sprintf("| px: %dx%d ", d.pixW, d.pixH))
 		case showFPS:
+			_, e = sb.WriteString(fmt.Sprintf("| fps: %f ", ebiten.ActualFPS()))
 		case showKhandlr:
+			kstr := ""
+			keys := input.KeysOut()
+			for _, k := range *keys {
+				kstr += k.String()
+			}
+			_, e = sb.WriteString(fmt.Sprintf("\n| inKB[len %d]: %s", len(*keys), kstr))
 		}
+		if e != nil {
+			log.Default()
+		}
+
+	}
+	d.Output = sb.String()
+
+	if !d.showDebug {
+		d.Output = "[!!debug should be off!!]\n\n"
 	}
 
-} //NOT DONE YET!
+}
 
 // DebugMsgControl Builds the debug message
 func DebugMsgControl(gameW, gameH, pixW, pixH int) {
@@ -124,11 +151,6 @@ func DebugMsgControl(gameW, gameH, pixW, pixH int) {
 		debugFPS, debugKeyHandler,
 		debugKeys, debugKeysQty}
 	Dbg.Output = stringMerge(dbgPack, genPack)
-}
-
-// DrawDebug is run in the Draw loop to display debug stats at the top.
-func DrawDebug() {
-
 }
 
 //*==Debug MsgGen Functions===============================================

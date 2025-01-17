@@ -8,7 +8,11 @@ import (
 )
 
 // =======================
-// STRUCTS
+const (
+	simShiftMod int = iota
+	simNearbyChance
+	simFloorCycle
+)
 
 // BaseEntity default entity type/debug entity
 type BaseEntity struct {
@@ -42,10 +46,51 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity { // ? no ptr ok on GridEn
 	return &grid
 }
 
+// TestSimulate is a testing simulation logic step
+// It isn't working because its out of range du
+func (grid *GridEntity) TestSimulate(shift, modifier int) {
+	testSimType := simShiftMod
+	imax := len(grid.Pixels)
+	switch testSimType {
+	case simShiftMod:
+		for i := range grid.Pixels {
+			grid.Pixels[i] = grid.Pixels[((i+shift)<<modifier)%imax]
+		}
+	case simNearbyChance:
+
+	case simFloorCycle:
+
+	}
+}
+
+func (grid *GridEntity) simShiftModulo(shift, modifier int) {
+
+}
+
 // ======================================================
 // ======================================================
-// * unused
-/*
+
+/*//* unused
+
+//first test sim code. not working because goes oob. also bitshift prob not the best anyway
+
+func rightShiftWrap(val, nbits, limit) val {}
+
+for i := range grid.Pixels {
+		s := i >> 1
+		lpix := len(grid.Pixels)
+		if s >= lpix {
+			s = s % lpix
+		} else if s < 0 {
+
+		}
+
+		if i%2 == 0 {
+			grid.Pixels[i] = grid.Pixels[i>>1]
+		} else {
+			grid.Pixels[i] = grid.Pixels[i<<1]
+		}
+	}
 // -----------------------
 // INTERFACES
 
@@ -56,7 +101,7 @@ type entityProperties interface {SetProperties()}
 type Entity interface {Emit()}
 
 // -----------------------
-// Structs
+// STRUCTS
 
 // TextEntity for defining and drawing text
 type TextEntity struct {textFaceSource *text.GoTextFaceSource}
@@ -65,7 +110,7 @@ type TextEntity struct {textFaceSource *text.GoTextFaceSource}
 type MapEntity struct {}
 
 // -----------------------
-// Functions
+// FUNCTIONS
 func borderFill(grid *GridEntity) {} //TODO
 func resetGrid(grid *GridEntity) {} //TODO
 */

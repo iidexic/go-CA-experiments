@@ -59,7 +59,28 @@ func (g *Game) callKey(k ebiten.Key) {
 	case ebiten.KeyQ:
 
 	case ebiten.KeyEnter:
-
+		if g.RunSimulation > 0 {
+			g.RunSimulation = 0
+		} else {
+			g.RunSimulation = 1
+		}
+	case ebiten.KeyArrowUp:
+		g.simShift++
+		if g.simShift > g.simBitmax {
+			g.simShift = g.simBitmax
+		}
+	case ebiten.KeyArrowDown:
+		if g.simShift > 1 {
+			g.simShift--
+		}
+	case ebiten.KeyArrowLeft:
+		if g.simBitmax > 2 {
+			g.simBitmax--
+		}
+	case ebiten.KeyArrowRight:
+		if g.simBitmax < 8 { //somewhat arbitrary
+			g.simBitmax++
+		}
 	}
 
 }
@@ -68,9 +89,9 @@ func (g *Game) callKey(k ebiten.Key) {
 
 // Game struct - ebiten
 type Game struct { //^-GAME STRUCT-
-	maingrid      *entity.GridEntity
-	pal           []color.RGBA
-	RunSimulation int
+	maingrid                           *entity.GridEntity
+	pal                                []color.RGBA
+	RunSimulation, simShift, simBitmax int
 }
 
 // Update game - game logic, assume locked at 60TPS.
@@ -80,7 +101,10 @@ func (g *Game) Update() error { //^UPDATE
 	input.GetInKB()
 	//util.DbgCaptureInput()
 	//the input stuff ain't working. Checking in Debug
-
+	if g.RunSimulation > 0 {
+		g.maingrid.TestSimulate(g.simShift, g.simBitmax)
+		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
+	}
 	inputActions(g)
 	return nil
 }
@@ -114,18 +138,16 @@ func main() {
 	if err != nil {
 		log.Panicf("Font did not load %s", err)
 	}
-
 	//--- temp above here ---
-
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowTitle("Hello, World!")
 	g := &Game{
 		RunSimulation: 0,
+		simShift:      1,
+		simBitmax:     4,
 		maingrid:      entity.MakeGridDefault(GameWidth, GameHeight),
 		pal:           gfx.Palette,
 	}
-	//g.maingrid = entity.MakeGridDefault(GameWidth, GameHeight)
-	//g.pal = gfx.Palette
 	//^====================================
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
