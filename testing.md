@@ -92,10 +92,20 @@ fmt.Printf("Rightshift 3:%d\n",-10<<3)
 
 ```go
 //uhh xor
-b:=byte(22)
-b2:=b+2*2*2*2*2*2
-_=b2
-fmt.Println("^2:",^2,"|^8:",^8,"|^11:",^11)
+fmt.Println(uint(12)>>40)
+//uhh neg modulo:
+fmt.Println(((2%16)-20)%16)
+```
+
+```go
+//loopy with returns
+
+for i:= range 20{
+	if i%3==0{
+		fmt.Println(i)
+		next 
+	}
+}
 ```
 
 ```go
@@ -110,4 +120,44 @@ y:=2
 //these dumb notebooks dont work with the import but this is true yes
 ypow:=math.Pow(float64(2),float64(y))
 fmt.Println(x>>y==int(ypow))
+//pretty sure bit shifts are waaay more efficient tho.
+
+```
+
+```go
+//? What does it take to get a float to give weird rand numbers
+// Apparrently none of this
+gimbley:= func() float64{
+	g:=(float64(1.1)-float64(1.101)+0.001)*10000000000000.0
+	g-=0.0011015494072
+	g*=100000000000.001
+	fmt.Printf("%0.32f\n",g)
+	return g
+}
+
+x:=gimbley()
+for i:= range 12{
+	g:= []byte{byte(i)}
+	for j:= range byte(3){
+			g=append(g,j)
+	} 
+}
+y:=gimbley()
+
+gimb2:=gimbley
+x2:=gimb2()
+x=gimb2()
+
+var gimb3 func() float64
+gimb3=gimb2
+gimbP:=&gimb2
+x3:=gimb3()
+x3p:=(*gimbP)()
+_=x
+_=x2
+_=y
+_=x3
+_=x3p
+
+
 ```

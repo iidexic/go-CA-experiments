@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 
+	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -26,7 +27,8 @@ type BaseEntity struct {
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
 	Img            *ebiten.Image
-	X, Y, Area     uint
+	X, Y           uint
+	Area           int
 	Pixels, PixLum []byte
 	Op             ebiten.DrawImageOptions
 	Set, Draw      bool
@@ -39,7 +41,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity { // ? no ptr ok on GridEn
 	grid := GridEntity{
 		Img: ebiten.NewImage(width, height),
 		Op:  ebiten.DrawImageOptions{},
-		X:   uint(width), Y: uint(height), Area: uint(width * height),
+		X:   uint(width), Y: uint(height), Area: width * height,
 		Set:    true,
 		Pixels: make([]byte, width*height*4),
 	}
@@ -57,112 +59,87 @@ func wrap(val, limit int) int {
 // will crash if grid.Pixel is not initialized.
 func (grid *GridEntity) TestSimulate(shift, modifier int) {
 	gX := int(grid.X)
-	gY := int(grid.Y)
-	testSimType := simShiftMod
+	//	gY := int(grid.Y)
+	testSimType := simLightVSDark
 	imax := len(grid.Pixels)
 	switch testSimType {
 	case simShiftMod:
 		for i := range grid.Pixels {
 			grid.Pixels[i] = grid.Pixels[((i+shift)<<modifier)%imax]
 		}
-	case simLightVSDark:
-		//[Light Luminance vs Dark Luminance]
-		//*= Further from 50% Gray = higher chance of victory
-		//*= Simplest method, Check up and left for least amt of change to 
+	case simLightVSDark: //TODO clean up
+		rng := make([]byte, grid.Area)
+		_, _ = fastrand.Read(rng) //lazy, but fastrand directly returns nil
+		//[Light vs Dark colorSum]
+		//TODO: clean up on comparisons, major readability problem
 		for i := 0; i < len(grid.Pixels); i += 4 {
-			csum := int(grid.Pixels[i]) + int(grid.Pixels[i+1]) + int(grid.Pixels[i+2])
-			isLight:=csum>382
-			if isLight{
-			
+
 			up := i - gX
-			down := i + gX
 			left := i - 4
-			right := i + 4
-			//>---(WRAP)---
-			//* Wrap: Wrap top-bottom and also left-right
+			//Wrap: Wrap top-bottom and left-right
 			if up < 0 {
 				up = wrap(up, imax)
-			} else if down >= imax {
-				down = wrap(down, imax)
 			}
 			if left%gX == gX-1 {
 				left += gX
-			} else if right%gX == gX {
-				right -= gX
 			}
-			//>---(!WRAP)---
-			//up-down-left-right color sums
-			csumU := grid.Pixels[up] + grid.Pixels[up+1] + grid.Pixels[up+2]
-			csumD := grid.Pixels[down] + grid.Pixels[down+1] + grid.Pixels[down+2]
-			csumL := grid.Pixels[left] + grid.Pixels[left+1] + grid.Pixels[left+2]
-			csumR := grid.Pixels[right] + grid.Pixels[right+1] + grid.Pixels[right+2]
+			//up-left color avgs
+			cavg := (int(grid.Pixels[i]) + int(grid.Pixels[i+1]) + int(grid.Pixels[i+2])) / 3
 
+			cavgU := coloravg(grid.Pixels[up : up+3])
+			cavgL := coloravg(grid.Pixels[left : left+3])
+			isLight := cavg > 127
+			var iwinvU, iwinvL bool
+			// calculting VS. Note that rng is same for all  checks at 1 position(i)
+			if bu := cavgU > 127; bu != isLight { //if opposites
+				if bu { // if up light
+					iwinvU = !colorDistanceVS(cavgU, cavg, 127, int(rng[i%grid.Area]))
+				} else {
+					iwinvU = colorDistanceVS(cavg, cavgU, 127, int(rng[i%grid.Area]))
+				}
+			}
+			if bl := cavgL > 127; bl != isLight {
+				if bl { // if left light
+					iwinvL = !colorDistanceVS(cavgL, cavg, 127, int(rng[i%grid.Area]))
+				} else {
+					iwinvL = colorDistanceVS(cavg, cavgL, 127, int(rng[i%grid.Area]))
+				}
+			}
+			if iwinvU {
+
+			} else {
+
+			}
+			if iwinvL {
+				for cw := range grid.Pixels[left : left+2] {
+					grid.Pixels[left+cw] = grid.Pixels[left+cw] + moveBhalf(grid.Pixels[left+cw], grid.Pixels[i+cw])
+				}
+			}
 		}
 	case simFloorCycle:
 
 	}
 }
-
-func (grid *GridEntity) simShiftModulo(shift, modifier int) {
+func colorApplyWin() {
 
 }
-
-// ======================================================
-// ======================================================
-
-/*//** unused
-
-//* this was sudocode for wrap in comparisons
-//~	//first perform initial :
-//~		u = i-wline, d = i+wline, l = i-1, r = i+1
-//~	//then do checks
-//~		if i < wline or i (is on last line) >=len-wline (i think) //VERTICAL WRAP
-//~			then do mod +len mod
-//~	//This made harder by the fact that we have 4val per pixel
-//~ // Maybe we can do:
-//~		if i%len<4 then add wlen to i (if left wrap add a row)
-//~		if i%len>(len-4) then subtract wlen from i
-//~	//should be good. Checking for each per pix
-
-//first test sim code. not working because goes oob. also bitshift prob not the best anyway
-
-func rightShiftWrap(val, nbits, limit) val {}
-
-for i := range grid.Pixels {
-		s := i >> 1
-		lpix := len(grid.Pixels)
-		if s >= lpix {
-			s = s % lpix
-		} else if s < 0 {
-
-		}
-
-		if i%2 == 0 {
-			grid.Pixels[i] = grid.Pixels[i>>1]
-		} else {
-			grid.Pixels[i] = grid.Pixels[i<<1]
-		}
+func moveBhalf(from, to byte) byte {
+	return (to - from) / 2
+}
+func colorDistanceVS(vHi, vLo, center, rng int) bool {
+	return vHi+vLo-center > rng // true == vHi win
+}
+func coloravg(b []byte) int {
+	return (int(b[0]) + int(b[1]) + int(b[2])) / 3
+}
+func bavg(b []byte) int {
+	var sum int = 0
+	var i int
+	for i = range b {
+		sum += int(b[i])
 	}
-// -----------------------
-// INTERFACES
+	return sum / (i + 1)
+}
 
-// entityProperties holds values corresponding to game entity
-type entityProperties interface {SetProperties()}
-
-// Entity interface for all game entities.
-type Entity interface {Emit()}
-
-// -----------------------
-// STRUCTS
-
-// TextEntity for defining and drawing text
-type TextEntity struct {textFaceSource *text.GoTextFaceSource}
-
-// MapEntity planned for array of instances of entity with set locations
-type MapEntity struct {}
-
-// -----------------------
-// FUNCTIONS
-func borderFill(grid *GridEntity) {} //TODO
-func resetGrid(grid *GridEntity) {} //TODO
-*/
+func (grid *GridEntity) simShiftModulo(shift, modifier int) {
+}

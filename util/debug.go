@@ -54,7 +54,8 @@ var (
 		pixH:        0,
 		keysAppend:  make([]ebiten.Key, 0, 12),
 		Output:      "",
-		SelectDebug: make([]int, 0, 12)}
+		SelectDebug: []int{showTPS, showFPS, showKhandlr},
+	}
 )
 
 // SetValues currently sets screen values for debug display

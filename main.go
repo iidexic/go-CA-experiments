@@ -54,8 +54,8 @@ func (g *Game) callKey(k ebiten.Key) {
 	case ebiten.KeyE:
 
 	case ebiten.KeyR:
-		g.maingrid.Pixels = gfx.Randpx(g.maingrid.Area)
-		g.maingrid.Img.WritePixels(gfx.Randpx(g.maingrid.Area))
+		g.maingrid.Pixels = gfx.Randpx(uint(g.maingrid.Area))
+		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
 	case ebiten.KeyQ:
 
 	case ebiten.KeyEnter:
@@ -74,18 +74,18 @@ func (g *Game) callKey(k ebiten.Key) {
 			g.simShift--
 		}
 	case ebiten.KeyArrowLeft:
-		if g.simBitmax > 2 {
+		if g.simBitmax > 0 {
 			g.simBitmax--
 		}
 	case ebiten.KeyArrowRight:
-		if g.simBitmax < 8 { //somewhat arbitrary
+		if g.simBitmax < 28 { //somewhat arbitrary
 			g.simBitmax++
 		}
 	}
 
 }
 
-// ==================================
+//==================================
 
 // Game struct - ebiten
 type Game struct { //^-GAME STRUCT-
@@ -96,7 +96,7 @@ type Game struct { //^-GAME STRUCT-
 
 // Update game - game logic, assume locked at 60TPS.
 func (g *Game) Update() error { //^UPDATE
-	defer util.DebugMsgControl(GameWidth, GameHeight, PixWidth, PixHeight)
+	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
 	input.GetInKB()
 	//util.DbgCaptureInput()
