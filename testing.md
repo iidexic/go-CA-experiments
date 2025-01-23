@@ -1,4 +1,72 @@
 ```go
+
+import "fmt"
+
+for g:= range 3{
+fmt.Println(g)
+}
+```
+
+```go
+//just checking shit
+import "fmt"
+var b byte = 0
+b--
+//floor div value
+fmt.Println("floor div summed max:",(255*3)/2)
+fmt.Println("fdiv then sum:", (255/2)*3, "- precedence check:", 255/2*3)
+var i int = -16
+fmt.Println("int to uint wraps neg:",uint(i))
+fmt.Println("byte to int:",int8(byte(32)))
+
+```
+
+```go
+//test slice modifying
+import "fmt"
+
+g:= make([]int, 300)
+for x:= range g{
+	g[x] = x
+}
+
+fmt.Println(g[128:138])
+
+//? Does index of a subslice change?
+//** Answer: Yes, always starts @ 0.  
+for i, val := range g[225:229]{
+	fmt.Println("index:",i,"value:", val)
+}
+
+
+
+
+```
+
+```go
+import "fmt"
+g:= make([]int, 300)
+for x:= range g{
+	g[x] = x
+}
+//? Does modifying val in a loop modify original array?
+//** Answer: Yes, always starts @ 0.  
+for ind, vind := range g[16:19]{
+	*vind *= *vind
+	fmt.Println("vind:",vind,"slice:", g[16+ind])
+}
+```
+
+```go
+import "fmt"
+var i, s int = 0,0
+for i= range 30 {	
+	s+=i
+}
+fmt.Println(i)
+```
+
+```go
 import "fmt"
 //NOTE -  (LEARNING) WHY IS THIS BIT SHIFTING DONE IN STDLIB COLOR FUNCTION(S)
 func 

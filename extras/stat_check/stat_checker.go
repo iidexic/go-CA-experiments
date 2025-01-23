@@ -29,39 +29,40 @@ type rngFast[G genable] struct {
 	genA     []G
 }
 
-/* this not work
-func genInit(tt ttype) rngFast {
+// RNGenInit RETURNS AN RNG GENERATOR USING TYPE INDICATED BY TTYPE
+// This function allows a non-shared generic struct to be created.
+// Maybe there's a point for someone to use this, I don't know.
+func RNGenInit(t ttype) interface{} {
 
-	switch tt {
+	switch t {
 	case tfloat:
-		return rngFast[float64]{zero: float64(0.00)}
+		return rngFast[float64]{}
 	case tint:
-		return rngFast[int]{zero: int(0)}
+		return rngFast[int]{}
 	case tuint:
-		return rngFast[uint]{zero: uint(0)}
+		return rngFast[uint]{}
 	case tint16:
-		return rngFast[int16]{zero: int16(0)}
+		return rngFast[int16]{}
 	case tuint16:
-		return rngFast[uint16]{zero: uint16(0)}
+		return rngFast[uint16]{}
 	case tint8:
-		return rngFast[int8]{zero: int8(0)}
+		return rngFast[int8]{}
 	case tbyte:
-		return rngFast[byte]{zero: byte(0)}
+		return rngFast[byte]{}
 	default:
 		panic("Use a correct type. This function doesn't even work")
 	}
 }
 
 func (rng rngFast[G]) makeN(n int) {
-	var get G
+	//var get G
 }
 func (rng rngFast[G]) bounds(top, btm G) {
 	rng.btm = btm
 	rng.top = top
 }
-func (rng rngFast[G]) getN(n int)
+func (rng rngFast[G]) GetN(n int)
 func main() {
 	var gen rngFast[int]
 	gen.makeN(5)
 }
-*/

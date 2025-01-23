@@ -2,7 +2,6 @@ package entity
 
 import (
 	"image"
-	"image/color"
 
 	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -24,32 +23,6 @@ type BaseEntity struct {
 	set, drawn bool
 }
 
-// GridEntity intended basis of cellular automata grid
-type GridEntity struct {
-	Img            *ebiten.Image
-	X, Y           uint
-	Area           int
-	Pixels, PixLum []byte
-	Op             ebiten.DrawImageOptions
-	Set, Draw      bool
-}
-
-// MakeGridDefault generates base CA grid
-func MakeGridDefault(gWidth, gHeight int) *GridEntity { // ? no ptr ok on GridEntity????
-	width := (3 * gWidth) / 4
-	height := (3 * gHeight) / 4
-	grid := GridEntity{
-		Img: ebiten.NewImage(width, height),
-		Op:  ebiten.DrawImageOptions{},
-		X:   uint(width), Y: uint(height), Area: width * height,
-		Set:    true,
-		Pixels: make([]byte, width*height*4),
-	}
-	grid.Op.GeoM.Translate(float64((gWidth-width)/2), float64((gHeight-height)/2))
-	grid.Img.Fill(color.RGBA{R: 155, G: 155, B: 165, A: 255})
-	return &grid
-}
-
 // wrap val to remain within limit
 func wrap(val, limit int) int {
 	return ((val % limit) + limit) % limit
@@ -67,11 +40,11 @@ func (grid *GridEntity) TestSimulate(shift, modifier int) {
 		for i := range grid.Pixels {
 			grid.Pixels[i] = grid.Pixels[((i+shift)<<modifier)%imax]
 		}
-	case simLightVSDark: //TODO clean up
+	case simLightVSDark:
 		rng := make([]byte, grid.Area)
 		_, _ = fastrand.Read(rng) //lazy, but fastrand directly returns nil
 		//[Light vs Dark colorSum]
-		//TODO: clean up on comparisons, major readability problem
+		//!Fails Immediately. Writing into 
 		for i := 0; i < len(grid.Pixels); i += 4 {
 
 			up := i - gX
@@ -139,7 +112,4 @@ func bavg(b []byte) int {
 		sum += int(b[i])
 	}
 	return sum / (i + 1)
-}
-
-func (grid *GridEntity) simShiftModulo(shift, modifier int) {
 }

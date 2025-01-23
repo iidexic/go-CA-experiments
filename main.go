@@ -102,7 +102,9 @@ func (g *Game) Update() error { //^UPDATE
 	//util.DbgCaptureInput()
 	//the input stuff ain't working. Checking in Debug
 	if g.RunSimulation > 0 {
-		g.maingrid.TestSimulate(g.simShift, g.simBitmax)
+		g.maingrid.SetMod(g.simShift, g.simBitmax)
+		g.maingrid.SimstepLVSD()
+		//g.maingrid.TestSimulate(g.simShift, g.simBitmax) //this is original simulate call
 		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
 	}
 	inputActions(g)
