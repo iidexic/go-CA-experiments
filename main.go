@@ -105,7 +105,7 @@ func (g *Game) Update() error { //^UPDATE
 
 	if g.RunSimulation > 0 {
 		g.maingrid.SetMod(g.simShift, g.simBitmax)
-		g.maingrid.SimstepLVSD()
+		g.maingrid.SimstepLVSD(true)
 		//g.maingrid.TestSimulate(g.simShift, g.simBitmax) //this is original simulate call
 		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
 	}

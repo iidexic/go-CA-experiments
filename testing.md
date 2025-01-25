@@ -8,6 +8,12 @@ fmt.Println(g)
 ```
 
 ```go
+import "fmt"
+var st string
+fmt.Println(len(st))
+```
+
+```go
 //just checking shit
 import "fmt"
 var b byte = 0

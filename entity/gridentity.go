@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"fmt"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -17,7 +18,7 @@ type GridEntity struct {
 }
 
 // MakeGridDefault generates base CA grid
-func MakeGridDefault(gWidth, gHeight int) *GridEntity { // ? no ptr ok on GridEntity????
+func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 	width := (3 * gWidth) / 4
 	height := (3 * gHeight) / 4
 	grid := GridEntity{
@@ -42,20 +43,44 @@ func (grid *GridEntity) SetMod(modAdd, modMult int) {
 
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
-func (grid *GridEntity) SimstepLVSD() {
-	// Fixed by doing -3 to sent len value in functionMod.
-	//TODO: Now all combinations of modifiers (add/mult) will have grid go to white. Is that how it shold work?...,
-	for i := 0; i < len(grid.Pixels); i += 4 {
-		//? any benefit to using i++ in range area *4 for index? yes prob
-		toIndex := functionMod(i, grid.modAdd, grid.modMult, len(grid.Pixels)) //FIXME
-		/*//! Function mod not keeping in bounds (most likely)
-		LIMIT = grid.width*grid.height ~ 518400 for now.
+func (grid *GridEntity) SimstepLVSD(pixLock bool) {
+	if !pixLock {
+		for i := 0; i < len(grid.Pixels); i += 4 {
+			//TODO: Compare/Contrast newR/newB and wrapRange. For now going wrapRange
+			//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
+			//newB := shiftMod(i+2, grid.modAdd, grid.modMult, len(grid.Pixels)) // this will not work unless all RGB are done separately
+			//* Changed wrap() to mod by limit-3. Now all pixels always go toward white
+			first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
+			grid.pxGoToward(i, grid.Pixels[first:last])
+		}
+	} else {
+		for i := 0; i < grid.Area; i++ {
+			iR := i * 4
+			newPix := shiftMod(i, grid.modAdd, grid.modMult, grid.Area)
+			newR := newPix * 4 //area to RGB, will always land on R val
+			//!unneeded check:
+			if newR+2 >= len(grid.Pixels) {
+				fmt.Println("over!!")
+			}
+			grid.pxGoToward(iR, grid.Pixels[newR:newR+3])
+		}
 
-		*/
-		grid.pxGoToward(i, grid.Pixels[toIndex:toIndex+3])
 	}
 }
+func shiftMod(start, add, mult int, limit int) int {
+	return wrap(((start + add) * mult), limit-3)
+}
+func wrapRange(start, len, add, mult int, limit int) (int, int) {
+	ishift := wrap((start+add)*mult, limit)
+	endshift := ishift + (len - 1)
+	if endshift < limit {
+		return ishift, endshift
+	} //* if not then (for now) subtract length
+	return ishift - (len - 1), endshift - (len - 1)
+}
+func (grid *GridEntity) SimstepValueShift() {
 
+}
 func (grid *GridEntity) pxGoToward(indexR int, toPx []byte) {
 	for i := range 3 {
 		if grid.Pixels[indexR+i] > toPx[i] {
@@ -80,8 +105,4 @@ func (grid *GridEntity) pxTransplant(index int, R, G, B int) {
 	grid.Pixels[index] = nR
 	grid.Pixels[index+1] = nG
 	grid.Pixels[index+2] = nB
-}
-
-func functionMod(start, add, mult int, limit int) int {
-	return wrap(((start + add) * mult), limit-3)
 }
