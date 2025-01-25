@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image/color"
 	"log"
 
@@ -98,9 +99,10 @@ type Game struct { //^-GAME STRUCT-
 func (g *Game) Update() error { //^UPDATE
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
+	util.Dbg.UpdateDetail = fmt.Sprintf("||U:add/shift=%d, multBitmax=%d", g.simShift, g.simBitmax)
 	input.GetInKB()
 	//util.DbgCaptureInput()
-	//the input stuff ain't working. Checking in Debug
+
 	if g.RunSimulation > 0 {
 		g.maingrid.SetMod(g.simShift, g.simBitmax)
 		g.maingrid.SimstepLVSD()
@@ -114,7 +116,6 @@ func (g *Game) Update() error { //^UPDATE
 // Draw screen
 func (g *Game) Draw(screen *ebiten.Image) { //^DRAW
 	util.DbgCountFrames()
-	util.DbgCaptureInput()
 	screen.Fill(g.pal[0])
 
 	if g.maingrid.Draw {

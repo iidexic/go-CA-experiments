@@ -43,10 +43,15 @@ func (grid *GridEntity) SetMod(modAdd, modMult int) {
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD() {
+	// Fixed by doing -3 to sent len value in functionMod.
+	//TODO: Now all combinations of modifiers (add/mult) will have grid go to white. Is that how it shold work?...,
 	for i := 0; i < len(grid.Pixels); i += 4 {
-		//? any benefit to using i++ in range area *4 for index?
-		//toIndex := i * 2 % int(len(grid.Pixels)) //original index modulate
-		toIndex := functionMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
+		//? any benefit to using i++ in range area *4 for index? yes prob
+		toIndex := functionMod(i, grid.modAdd, grid.modMult, len(grid.Pixels)) //FIXME
+		/*//! Function mod not keeping in bounds (most likely)
+		LIMIT = grid.width*grid.height ~ 518400 for now.
+
+		*/
 		grid.pxGoToward(i, grid.Pixels[toIndex:toIndex+3])
 	}
 }
@@ -78,30 +83,5 @@ func (grid *GridEntity) pxTransplant(index int, R, G, B int) {
 }
 
 func functionMod(start, add, mult int, limit int) int {
-	return wrap(((start + add) * mult), limit)
+	return wrap(((start + add) * mult), limit-3)
 }
-
-//TODO fix this error:
-/*
-github.com/iidexic/go-CA-experiments/entity.(*GridEntity).SimstepLVSD(0xc00039c080?)
-        D:/Coding/github/go-CA-experiments/entity/gridentity.go:50 +0xf0
-main.(*Game).Update(0xc00078a600)
-        D:/Coding/github/go-CA-experiments/main.go:106 +0xe7
-github.com/hajimehoshi/ebiten/v2.(*gameForUI).Update(0xc0000f6000)
-        C:/Users/derek/go/pkg/mod/github.com/hajimehoshi/ebiten/v2@v2.8.6/gameforui.go:112 +0x23
-github.com/hajimehoshi/ebiten/v2/internal/ui.(*context).updateFrameImpl(0xc00057ad00, {0xeb3790, 0xc0004500b0}, 0x1, 0x4094000000000000, 0x4086800000000000, 0x3ff8000000000000, 0xc00010a308, 0x0)
-        C:/Users/derek/go/pkg/mod/github.com/hajimehoshi/ebiten/v2@v2.8.6/internal/ui/context.go:154 +0x2f0
-github.com/hajimehoshi/ebiten/v2/internal/ui.(*context).updateFrame(0xc00057ad00, {0xeb3790, 0xc0004500b0}, 0x4094000000000000, 0x4086800000000000, 0x3ff8000000000000, 0xc00010a308)
-        C:/Users/derek/go/pkg/mod/github.com/hajimehoshi/ebiten/v2@v2.8.6/internal/ui/context.go:73 +0x85
-github.com/hajimehoshi/ebiten/v2/internal/ui.(*UserInterface).updateGame(0xc00010a308)
-        C:/Users/derek/go/pkg/mod/github.com/hajimehoshi/ebiten/v2@v2.8.6/internal/ui/ui_glfw.go:1491 +0x138
-github.com/hajimehoshi/ebiten/v2/internal/ui.(*UserInterface).loopGame(0xc00010a308)
-        C:/Users/derek/go/pkg/mod/github.com/hajimehoshi/ebiten/v2@v2.8.6/internal/ui/ui_glfw.go:1448 +0x8b
-github.com/hajimehoshi/ebiten/v2/internal/ui.(*UserInterface).runMultiThread.func2()
-        C:/Users/derek/go/pkg/mod/github.com/hajimehoshi/ebiten/v2@v2.8.6/internal/ui/run.go:71 +0x12c
-golang.org/x/sync/errgroup.(*Group).Go.func1()
-        C:/Users/derek/go/pkg/mod/golang.org/x/sync@v0.10.0/errgroup/errgroup.go:78 +0x50
-created by golang.org/x/sync/errgroup.(*Group).Go in goroutine 1
-        C:/Users/derek/go/pkg/mod/golang.org/x/sync@v0.10.0/errgroup/errgroup.go:75 +0x96
-exit status 2
-*/

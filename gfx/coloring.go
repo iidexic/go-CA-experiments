@@ -13,6 +13,27 @@ var Palette []color.RGBA = []color.RGBA{
 	{32, 29, 31, 255}, //background
 }
 
+/* colorInter and functions intend to be system of working with RGB with no alpha.
+ 	RGB can be imported from RGBA and exported back to RGBA
+type colorInter interface {
+	[]byte
+	fromRGBA([]byte)
+	toRGBA() []byte
+}
+//RGBi is a []byte that denotes it is a slice of RGB pixels, (only R,G,B values per pix)
+type RGBi []byte
+
+// FromRGBA populates RGBi with RGBA pixels, strips all Alpha values
+func (ipx *RGBi) FromRGBA(pixels []byte) {
+
+}
+
+// ToRGBA returns the RGBi image with alpha added back in
+func (ipx *RGBi) ToRGBA() []byte {
+
+}
+*/
+
 // Gradientbytes makes a gradient from color c1 to color c2 in number of steps
 // Loop operation: (happens once for  each byte in color)
 //
