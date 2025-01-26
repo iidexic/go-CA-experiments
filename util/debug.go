@@ -32,6 +32,8 @@ const (
 	showKhandlr
 	showUpdateDetail
 	showDrawDetail
+	showMouseDetail
+	nl
 )
 
 var (
@@ -47,7 +49,7 @@ var Dbg showDebugInfo = showDebugInfo{
 	pixW:        0,
 	pixH:        0,
 	keysAppend:  make([]ebiten.Key, 0, 12),
-	SelectDebug: []int{showTPS, showFPS, showKhandlr, showUpdateDetail, showDrawDetail},
+	SelectDebug: []int{showTPS, showFPS, nl, showMouseDetail, showKhandlr, showUpdateDetail, showDrawDetail},
 }
 
 // SetValues currently sets screen values for debug display
@@ -69,7 +71,7 @@ func (d *showDebugInfo) DebugBuildOutput() {
 	for _, v := range Dbg.SelectDebug {
 		switch v { // can actually do full string assembly in here by using a strings.Builder...
 		case showTPS:
-			_, e = sb.WriteString(fmt.Sprintf("| tps: %f ", ebiten.ActualTPS()))
+			_, e = sb.WriteString(fmt.Sprintf("| tps: %0.0f ", ebiten.ActualTPS()))
 		case showTick:
 			_, e = sb.WriteString(fmt.Sprintf("| tick: %03d ", tick/10))
 		case showFrames:
@@ -81,18 +83,23 @@ func (d *showDebugInfo) DebugBuildOutput() {
 		case showWindowPX:
 			_, e = sb.WriteString(fmt.Sprintf("| px: %dx%d ", d.pixW, d.pixH))
 		case showFPS:
-			_, e = sb.WriteString(fmt.Sprintf("| fps: %f ", ebiten.ActualFPS()))
+			_, e = sb.WriteString(fmt.Sprintf("| fps: %0.0f ", ebiten.ActualFPS()))
 		case showKhandlr:
 			kstr := ""
 			keys := input.KeysOut()
 			for _, k := range *keys {
 				kstr += k.String()
 			}
-			_, e = sb.WriteString(fmt.Sprintf("\n| inKB[len %d]: %s", len(*keys), kstr))
+			_, e = sb.WriteString(fmt.Sprintf("| inKB[len %d]: %s", len(*keys), kstr))
 		case showUpdateDetail:
 			_, e = sb.WriteString(d.UpdateDetail)
 		case showDrawDetail:
 			_, e = sb.WriteString(d.DrawDetail)
+		case showMouseDetail:
+			mX, mY := ebiten.CursorPosition()
+			_, e = sb.WriteString(fmt.Sprintf("| pos:(%3d,%3d), keys:%s", mX, mY, dbgGetMouse()))
+		case nl:
+			_, e = sb.WriteString("\n")
 		}
 		if e != nil {
 			log.Default()
@@ -107,7 +114,26 @@ func (d *showDebugInfo) DebugBuildOutput() {
 
 }
 
-//*==Debug MsgGen Functions===============================================
+// *==Debug MsgGen Functions===============================================
+func dbgGetMouse() string { //crusty mb get func, works tho
+	btnstr := ""
+	if ebiten.IsMouseButtonPressed(0) {
+		btnstr += "lmb "
+	}
+	if ebiten.IsMouseButtonPressed(1) {
+		btnstr += "rmb "
+	}
+	if ebiten.IsMouseButtonPressed(2) {
+		btnstr += "mmb "
+	}
+	if ebiten.IsMouseButtonPressed(3) {
+		btnstr += "mb4 "
+	}
+	if ebiten.IsMouseButtonPressed(4) {
+		btnstr += "mb5 "
+	}
+	return btnstr
+}
 
 // DbgCountFrames will run each draw call. Max at 2800 (arbitrary) then resets
 func DbgCountFrames() {

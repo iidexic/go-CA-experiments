@@ -46,10 +46,7 @@ func (grid *GridEntity) SetMod(modAdd, modMult int) {
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 	if !pixLock {
 		for i := 0; i < len(grid.Pixels); i += 4 {
-			//TODO: Compare/Contrast newR/newB and wrapRange. For now going wrapRange
 			//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
-			//newB := shiftMod(i+2, grid.modAdd, grid.modMult, len(grid.Pixels)) // this will not work unless all RGB are done separately
-			//* Changed wrap() to mod by limit-3. Now all pixels always go toward white
 			first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
 			grid.pxGoToward(i, grid.Pixels[first:last])
 		}
@@ -78,6 +75,8 @@ func wrapRange(start, len, add, mult int, limit int) (int, int) {
 	} //* if not then (for now) subtract length
 	return ishift - (len - 1), endshift - (len - 1)
 }
+
+// SimstepValueShift is home of current more simplistic sim model after move on to full lvsd
 func (grid *GridEntity) SimstepValueShift() {
 
 }

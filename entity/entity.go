@@ -44,7 +44,7 @@ func (grid *GridEntity) TestSimulate(shift, modifier int) {
 		rng := make([]byte, grid.Area)
 		_, _ = fastrand.Read(rng) //lazy, but fastrand directly returns nil
 		//[Light vs Dark colorSum]
-		//!Fails Immediately. Writing into 
+		//!Fails Immediately. Writing into
 		for i := 0; i < len(grid.Pixels); i += 4 {
 
 			up := i - gX
