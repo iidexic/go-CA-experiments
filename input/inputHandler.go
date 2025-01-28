@@ -7,6 +7,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+// MKBinput
+type MKBinput struct {
+	cX, cY                 int
+	kPressed, kJustPressed []ebiten.Key
+}
+
 // Keys is attempt at non-struct kb handler
 var keysPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
 var keysJustPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
