@@ -19,7 +19,7 @@
 
 [105-PageDown] [106-PageUp] [107-Pause] [108-Period] [109-PrintScreen] [110-Quote] [111-ScrollLock] [112-Semicolon] [113-ShiftLeft] [114-ShiftRight]
 [115-Slash] [116-Space] [117-Tab] [118-Alt] [119-Control] [120-Shift] [121-Meta] [122-Max]
-
+{
 0, //KeyA
 1, //KeyB
 2, //KeyC
@@ -143,3 +143,4 @@
 120, //KeyShift
 121, //KeyMeta
 122, //KeyMax
+}
