@@ -15,55 +15,13 @@ import (
 func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
-func inputActions(g *Game) {
-	//cursX,cursY:=ebiten.CursorPosition()
-	_, wy := ebiten.Wheel()
-	if wy > 0 {
-		//mouseWheelUp
-	} else if wy < 0 {
-		//mouseWheelDown
-	}
-	for _, k := range input.GetJustPressedKeys() {
-		g.callKey(k)
-	}
 
-}
-func (g *Game) callKey(k ebiten.Key) {
-	switch k {
-	case ebiten.KeyG:
-		g.maingrid.Draw = !g.maingrid.Draw
-	case ebiten.KeyE:
-
-	case ebiten.KeyR:
-		g.maingrid.Pixels = gfx.Randpx(uint(g.maingrid.Area))
-		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
-	case ebiten.KeyQ:
-
-	case ebiten.KeyEnter:
-		if g.RunSimulation > 0 {
-			g.RunSimulation = 0
-		} else {
-			g.RunSimulation = 1
-		}
-	case ebiten.KeyArrowUp:
-		g.modAdd++
-		if g.modAdd < 16 {
-			g.modAdd = g.modMult
-		}
-	case ebiten.KeyArrowDown:
-		if g.modAdd > 0 {
-			g.modAdd--
-		}
-	case ebiten.KeyArrowLeft:
-		if g.modMult > 0 {
-			g.modMult--
-		}
-	case ebiten.KeyArrowRight:
-		if g.modMult < 16 { //somewhat arbitrary
-			g.modMult++
-		}
-	}
-
+// Game struct - ebiten
+type Game struct {
+	maingrid                         *entity.GridEntity
+	pal                              []color.RGBA
+	gWidth, gHeight, pWidth, pHeight int
+	RunSimulation, modAdd, modMult   int
 }
 
 // GameInit returns Game pointer for main sim scene with default settings
@@ -80,27 +38,15 @@ func GameInit(gameWidth, gameHeight int) *Game {
 	return g
 }
 
-//==================================
-
-// Game struct - ebiten
-type Game struct { //^-GAME STRUCT-
-	maingrid                         *entity.GridEntity
-	pal                              []color.RGBA
-	gWidth, gHeight, pWidth, pHeight int
-	RunSimulation, modAdd, modMult   int
-}
+//===============================================================
 
 // Update game - game logic, assume locked at 60TPS.
-func (g *Game) Update() error { //^UPDATE
-	defer util.Dbg.DebugBuildOutput()
-	util.DbgCountTicks()
-	util.Dbg.UpdateDetail = fmt.Sprintf("||U:add/shift=%d, multBitmax=%d", g.modAdd, g.modMult)
-	input.GetInKB()
-	//util.DbgCaptureInput()
+func (g *Game) Update() error {
+	g.debugUpdate()
+
 	if g.RunSimulation > 0 {
 		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
-		//g.maingrid.TestSimulate(g.modAdd, g.modMult) //this is original simulate call
 		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
 	}
 	inputActions(g)
@@ -123,7 +69,12 @@ func (g *Game) Draw(screen *ebiten.Image) { //^DRAW
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	util.DbgCountLayout()
 	//TODO: Write functionality for scaling.
-	// i.e. : Maintain Ratio, relative screen position
-	// and maintain size of game area!! (i.e. not adding additional pixels to sim  by resizing)
 	return g.gWidth, g.gHeight
+}
+
+func (g *Game) debugUpdate() {
+	defer util.Dbg.DebugBuildOutput()
+	util.DbgCountTicks()
+	input.GetInKB() //DEBUG USE
+	util.Dbg.UpdateDetail = fmt.Sprintf("||U:add/shift=%d, multBitmax=%d", g.modAdd, g.modMult)
 }

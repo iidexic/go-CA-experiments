@@ -17,13 +17,12 @@ import (
 var (
 	PixWidth    int  = 1280
 	PixHeight   int  = 720
-	GameWidth   int  = 960 //640
-	GameHeight  int  = 540 //360
+	GameWidth   int  = 960 //16
+	GameHeight  int  = 540 //9
 	tick, frame uint = 0, 0
 	layoutCount int  = 0
 )
 
-// ==================================
 // ==================================
 
 func main() {

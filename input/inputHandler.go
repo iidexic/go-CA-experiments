@@ -7,22 +7,16 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-// MKBinput
-type MKBinput struct {
-	cX, cY                 int
-	kPressed, kJustPressed []ebiten.Key
-}
-
-// Keys is attempt at non-struct kb handler
+// maybe just make a struct for these
 var keysPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
 var keysJustPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
 
-// GetInKB is non-Handler Key Append.
+// GetInKB is DEBUG Key List
 func GetInKB() {
 	keysPressed = inpututil.AppendPressedKeys(keysPressed[:0])
 }
 
-// GetJustPressedKeys does almost nothing at this point
+// GetJustPressedKeys just middlemans right now
 func GetJustPressedKeys() []ebiten.Key {
 	keysJustPressed = inpututil.AppendJustPressedKeys(keysJustPressed[:0])
 	return keysJustPressed
@@ -32,5 +26,3 @@ func GetJustPressedKeys() []ebiten.Key {
 func KeysOut() *[]ebiten.Key {
 	return &keysPressed
 }
-
-// *=======Handler=========
