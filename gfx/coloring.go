@@ -8,11 +8,6 @@ import (
 	"github.com/iidexic/go-CA-experiments/util"
 )
 
-// Palette holds  main palette colors. Commment shows color/use
-var Palette []color.RGBA = []color.RGBA{
-	{32, 29, 31, 255}, //background
-}
-
 // Gradientbytes makes a gradient from color c1 to color c2 in number of steps
 // Loop operation: (happens once for  each byte in color)
 //
@@ -73,10 +68,39 @@ func Imagenoise(img *ebiten.Image) {
 	img.WritePixels(Randpx(area))
 }
 
-//=== Not currently used ===============================
+//=== PALETTES ===============================
 
-//func gradientRemainder(n, steps,sd, sr int) int{
-// 	not useful time spend to make more good
-// 	if n in first half (,steps//2) and stepnum % steps/sr == 0)
-// 	if in same range on other side of halfway
-//}
+// ColorselectWB aliases int for use as PaletteWB index name
+type ColorselectWB int
+
+// Color names for Palette
+const (
+	Dark ColorselectWB = iota
+	Brown
+	Peach
+	WhiteTan
+	Blue
+	MutedTeal
+	SkyBlue
+	GrayWarm
+	Red
+	Orange
+	Yellow
+	Green
+)
+
+// PaletteWB holds primary palette. use with Colorselect
+var PaletteWB []color.RGBA = []color.RGBA{
+	{43, 40, 33, 255},
+	{98, 76, 60, 255},
+	{217, 172, 139, 255},
+	{227, 207, 180, 255},
+	{36, 61, 92, 255},
+	{93, 114, 117, 255},
+	{92, 139, 147, 255},
+	{177, 165, 141, 255},
+	{176, 58, 72, 255},
+	{212, 128, 77, 255},
+	{224, 200, 114, 255},
+	{62, 105, 88, 255},
+}

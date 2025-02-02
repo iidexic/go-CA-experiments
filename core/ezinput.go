@@ -6,7 +6,7 @@ import (
 	"github.com/iidexic/go-CA-experiments/input"
 )
 
-func inputActions(g *Game) {
+func inputActions(g *GameSim) {
 	//cursX,cursY:=ebiten.CursorPosition()
 	_, wy := ebiten.Wheel()
 	if wy > 0 {
@@ -19,7 +19,7 @@ func inputActions(g *Game) {
 	}
 
 }
-func (g *Game) callKey(k ebiten.Key) {
+func (g *GameSim) callKey(k ebiten.Key) {
 	switch k {
 	case ebiten.KeyG:
 		g.maingrid.Draw = !g.maingrid.Draw

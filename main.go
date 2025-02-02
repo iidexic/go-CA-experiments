@@ -12,7 +12,6 @@ import (
 
 // globals and Structs (temporary)
 // ==================================
-
 // :)
 var (
 	PixWidth    int  = 1280
@@ -35,7 +34,8 @@ func main() {
 	//--- temp above here ---
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowTitle("CA Experimentor")
-	g := core.GameInit(GameWidth, GameHeight)
+	//g := core.GameSimInit(GameWidth, GameHeight)
+	g := core.GameTestInit(GameWidth, GameHeight)
 	//^====================================
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
