@@ -6,20 +6,21 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// =======================
-const (
-	simShiftMod int = iota
-	simLightVSDark
-	simFloorCycle
-)
-const halfL int = 3 * 0xff / 2
-
 // Entity denotes any game entity
 type Entity interface {
 	GetImg() *ebiten.Image
 	GetOpt() *ebiten.DrawImageOptions
 	GetGeom() *ebiten.GeoM
 }
+
+// =======================
+
+// =========Movement Testing========
+func (b *BaseEntity) testMovements() {
+	// dunno
+}
+
+// =================================
 
 // BaseEntity default entity type/debug entity
 type BaseEntity struct {
@@ -63,22 +64,5 @@ func wrap(val, limit int) int {
 	return ((val % limit) + limit) % limit
 }
 
-func moveBhalf(from, to byte) byte {
-	return (to - from) / 2
-}
-func colorDistanceVS(vHi, vLo, center, rng int) bool {
-	return vHi+vLo-center > rng // true == vHi win
-}
-func coloravg(b []byte) int {
-	return (int(b[0]) + int(b[1]) + int(b[2])) / 3
-}
-func bavg(b []byte) int {
-	var sum int = 0
-	var i int
-	for i = range b {
-		sum += int(b[i])
-	}
-	return sum / (i + 1)
-}
-
 // TestSimulate removed 2-2-25
+//also: moveBhalf, colorDistanceVS, coloravg, bavg. unused

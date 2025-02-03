@@ -35,7 +35,7 @@ func main() {
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowTitle("CA Experimentor")
 	//g := core.GameSimInit(GameWidth, GameHeight)
-	g := core.GameTestInit(GameWidth, GameHeight)
+	g := core.GameSimInit(GameWidth, GameHeight)
 	//^====================================
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)

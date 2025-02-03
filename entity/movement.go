@@ -1,5 +1,7 @@
 package entity
 
+// ^ This file is very early on (currently entirely unused)
+//** initially intended as event handler to store conditions and subsequent movements taken
 import "image"
 
 type movement interface {

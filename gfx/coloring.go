@@ -70,23 +70,24 @@ func Imagenoise(img *ebiten.Image) {
 
 //=== PALETTES ===============================
 
-// ColorselectWB aliases int for use as PaletteWB index name
-type ColorselectWB int
+// > --------Palette WoodBlock-----------------------
+/*
+type indexWB int
 
-// Color names for Palette
+// Color names for PaletteWB
 const (
-	Dark ColorselectWB = iota
-	Brown
-	Peach
-	WhiteTan
-	Blue
-	MutedTeal
-	SkyBlue
-	GrayWarm
-	Red
-	Orange
-	Yellow
-	Green
+	WBDark indexWB = iota
+	WBBrown
+	WBPeach
+	WBWhiteTan
+	WBBlue
+	WBMutedTeal
+	WBSkyBlue
+	WBGrayWarm
+	WBRed
+	WBOrange
+	WBYellow
+	WBGreen
 )
 
 // PaletteWB holds primary palette. use with Colorselect
@@ -103,4 +104,66 @@ var PaletteWB []color.RGBA = []color.RGBA{
 	{212, 128, 77, 255},
 	{224, 200, 114, 255},
 	{62, 105, 88, 255},
+}
+*/
+//> ----------------------------------------------------
+
+// > -------Pallet Gummy Pickles-------------------------
+type indexGP int
+
+// Color names for PalleteGP
+const (
+	Yellow indexGP = iota
+	Tan
+	Green
+	GrayDark
+	GrayMid
+	GrayLight
+	White
+	LightPink
+	Pink
+	Maroon
+	Salmon
+	PeachCoral
+	Mustard
+	DarkOrange
+	MidRed
+	Brown
+	Lilac
+	Orange
+	LightOrange
+	CornflowerBlue
+	SeaBlue
+	BluPurp
+	DeepPurp
+	Dark
+)
+
+// PaletteGP holds Gummy Pickles pallete for use throughout
+var PaletteGP []color.RGBA = []color.RGBA{
+	// Gummy-Pickles (24-color)
+	{199, 175, 66, 255},  //yellow
+	{165, 132, 73, 255},  //Tan mid (slight grn)
+	{73, 106, 75, 255},   //Green
+	{54, 73, 98, 255},    //GrayDark (muted blue)
+	{99, 121, 140, 255},  //GrayMid
+	{179, 197, 194, 255}, //GrayLight
+	{239, 236, 232, 255}, //White
+	{216, 163, 220, 255}, //LightPink
+	{212, 98, 158, 255},  //Pink
+	{133, 57, 91, 255},   //Maroon
+	{206, 82, 99, 255},   //Salmon
+	{241, 142, 116, 255}, //Peach
+	{211, 147, 84, 255},  //MustardYlw
+	{199, 102, 82, 255},  //DarkOrng
+	{164, 72, 87, 255},   //MidRed
+	{154, 92, 76, 255},   //Brown
+	{120, 76, 173, 255},  //Lilac
+	{229, 136, 82, 255},  //Orang
+	{254, 204, 128, 255}, //LightOrange
+	{142, 163, 230, 255}, //CornflowerBlue
+	{58, 113, 166, 255},  //SeaBlue
+	{75, 58, 166, 255},   //BluPurp
+	{53, 41, 89, 255},    //DeepPurp
+	{6, 13, 35, 255},     //Dark
 }

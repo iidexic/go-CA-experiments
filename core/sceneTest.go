@@ -15,9 +15,14 @@ import (
 // GameTest - test scene Game struct
 type GameTest struct {
 	gWidth, gHeight int
-	//? should the game not have screen in it?
-	pal []color.RGBA //RGBA bytes - same as ebiten Pixel slice
-	sqr *entity.BaseEntity
+	pal             []color.RGBA
+	sqr             *entity.BaseEntity
+	cyc             cycler
+}
+
+// cycler counts cycles to be sent to anywhere game timing is needed
+type cycler struct {
+	ticks, frames int
 }
 
 // GameTestInit function to initialize Game obj and start gameloops from main
@@ -26,13 +31,14 @@ func GameTestInit(width, height int) *GameTest {
 		gWidth:  width,
 		gHeight: height,
 		sqr:     makeSquare(20, 20),
-		pal:     gfx.PaletteWB,
+		pal:     gfx.PaletteGP,
 	}
 	return g
 }
 
 // Update Game Method
 func (g *GameTest) Update() error {
+	g.cyc.ticks++
 	g.debugUpdate()
 
 	return nil
@@ -40,8 +46,9 @@ func (g *GameTest) Update() error {
 
 // Draw Game method
 func (g *GameTest) Draw(screen *ebiten.Image) {
+	g.cyc.frames++
 	util.DbgCountFrames()
-	screen.Fill(g.pal[gfx.WhiteTan])
+	screen.Fill(g.pal[gfx.GrayLight])
 
 	// g.drawEntityList(screen)
 

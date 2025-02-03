@@ -1,10 +1,8 @@
 package entity
 
 import (
-	"fmt"
-	"image/color"
-
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/iidexic/go-CA-experiments/gfx"
 )
 
 // GridEntity intended basis of cellular automata grid
@@ -14,7 +12,7 @@ type GridEntity struct {
 	modAdd, modMult, Area int
 	Pixels, PixLum        []byte
 	Op                    ebiten.DrawImageOptions
-	Set, Draw             bool
+	Set, Draw             bool // probably not in use
 }
 
 // MakeGridDefault generates base CA grid
@@ -31,7 +29,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		modMult: 1,
 	}
 	grid.Op.GeoM.Translate(float64((gWidth-width)/2), float64((gHeight-height)/2))
-	grid.Img.Fill(color.RGBA{R: 155, G: 155, B: 165, A: 255})
+	grid.Img.Fill(gfx.PaletteGP[gfx.Dark])
 	return &grid
 }
 
@@ -44,26 +42,16 @@ func (grid *GridEntity) SetMod(modAdd, modMult int) {
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
-	if !pixLock {
-		for i := 0; i < len(grid.Pixels); i += 4 {
-			//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
-			first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
-			grid.pxGoToward(i, grid.Pixels[first:last])
-		}
-	} else {
-		for i := 0; i < grid.Area; i++ {
-			iR := i * 4
-			newPix := shiftMod(i, grid.modAdd, grid.modMult, grid.Area)
-			newR := newPix * 4 //area to RGB, will always land on R val
-			//!unneeded check:
-			if newR+2 >= len(grid.Pixels) {
-				fmt.Println("over!!")
-			}
-			grid.pxGoToward(iR, grid.Pixels[newR:newR+3])
-		}
 
+	for i := 0; i < len(grid.Pixels); i += 4 {
+		//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
+
+		first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
+		grid.pxGoToward(i, grid.Pixels[first:last])
 	}
+
 }
+
 func shiftMod(start, add, mult int, limit int) int {
 	return wrap(((start + add) * mult), limit-3)
 }
@@ -77,8 +65,24 @@ func wrapRange(start, len, add, mult int, limit int) (int, int) {
 }
 
 // SimstepValueShift is home of current more simplistic sim model after move on to full lvsd
-func (grid *GridEntity) SimstepValueShift() {
+// (keep pixlock for now) pixlock false allows offset color value averaging (i.e. blue vs red channel).
+func (grid *GridEntity) SimstepValueShift(pixLock bool) {
+	if !pixLock {
+		for i := 0; i < len(grid.Pixels); i += 4 {
+			//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
+			first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
+			grid.pxGoToward(i, grid.Pixels[first:last])
+		}
+	} else {
+		for i := 0; i < grid.Area; i++ {
+			iR := i * 4
+			newPix := shiftMod(i, grid.modAdd, grid.modMult, grid.Area)
+			newR := newPix * 4 //area to RGB, will always land on R val
 
+			grid.pxGoToward(iR, grid.Pixels[newR:newR+3])
+		}
+
+	}
 }
 func (grid *GridEntity) pxGoToward(indexR int, toPx []byte) {
 	for i := range 3 {
@@ -105,3 +109,5 @@ func (grid *GridEntity) pxTransplant(index int, R, G, B int) {
 	grid.Pixels[index+1] = nG
 	grid.Pixels[index+2] = nB
 }
+
+//==Old, probably entirely unnecessary==

@@ -40,7 +40,7 @@ func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 		gWidth:        GameSimWidth,
 		gHeight:       GameSimHeight,
 		maingrid:      entity.MakeGridDefault(GameSimWidth, GameSimHeight),
-		pal:           gfx.PaletteWB,
+		pal:           gfx.PaletteGP,
 	}
 	//==== TESTING STUFF ====
 	g.sqr = makeSquare(16, 16)
@@ -110,7 +110,7 @@ func (g *GameSim) Update() error {
 // Draw screen
 func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 	util.DbgCountFrames()
-	screen.Fill(g.pal[0])
+	screen.Fill(g.pal[gfx.GrayDark])
 
 	if g.maingrid.Draw {
 		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
