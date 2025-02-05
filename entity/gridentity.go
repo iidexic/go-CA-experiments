@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/iidexic/go-CA-experiments/gfx"
 )
@@ -10,10 +11,21 @@ type GridEntity struct {
 	Img                   *ebiten.Image
 	X, Y                  uint
 	modAdd, modMult, Area int
-	Pixels, PixLum        []byte
+	Pixels                []byte
 	Op                    ebiten.DrawImageOptions
 	Set, Draw             bool // probably not in use
 }
+
+type outcome int
+
+const (
+	ineut outcome = iota
+	ilose
+	iwin
+	istale
+	ifriend
+	imine
+)
 
 // MakeGridDefault generates base CA grid
 func MakeGridDefault(gWidth, gHeight int) *GridEntity {
@@ -43,15 +55,56 @@ func (grid *GridEntity) SetMod(modAdd, modMult int) {
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 
-	for i := 0; i < len(grid.Pixels); i += 4 {
-		//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
+	for i := 0; i < grid.Area; i++ {
 
-		first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
-		grid.pxGoToward(i, grid.Pixels[first:last])
+		up := wrap(i-int(grid.X), grid.Area)
+		lft := sidewrap(i, -1, int(grid.X))
+		iR := i * 4
+		upR := up * 4
+		lftR := lft * 4
+		ival := bavg(grid.Pixels[iR : iR+3]...)
+		uval := bavg(grid.Pixels[upR : upR+3]...)
+		lval := bavg(grid.Pixels[lftR : lftR+3]...)
+		results := versusLVSD(ival, uval, lval)
+
+	}
+}
+func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
+	rand := make([]byte, 1)
+	rndv, e := fastrand.Read(rand)
+	erch(e)
+	wout := make([]outcome, len(versus))
+	var alignment bool
+	if iClr > 128 { //mc is light
+		alignment = true
+	} else if iClr < 127 { //mc is dark
+		alignment = false
+	} else { //true neutral, when iClr=127 or 128. But this needs adjusting.
+		return wout //spec guarantees 0s
+	}
+	for i, v := range versus {
+
+		if v == 127 || v == 128 { // nothing if v neutral, or if same team
+			wout[i] = imine
+		} else if (v > 128) == alignment {
+			wout[i] = ifriend
+		} else {
+			if alignment {
+
+			} else {
+
+			}
+		}
 	}
 
+	return wout
 }
+func battle(lite, dark, rng byte) (lightwin bool) {
 
+}
+func (grid *GridEntity) applyResult(results []outcome, i int, iVS ...int) {
+
+}
 func shiftMod(start, add, mult int, limit int) int {
 	return wrap(((start + add) * mult), limit-3)
 }

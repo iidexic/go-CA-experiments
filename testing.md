@@ -8,6 +8,16 @@ fmt.Println(g)
 ```
 
 ```go
+//negative mod
+import "fmt"
+
+fmt.Println(-20%3)
+x:=20
+x%=7
+fmt.Println(x)
+```
+
+```go
 import "fmt"
 var st string
 fmt.Println(len(st))
