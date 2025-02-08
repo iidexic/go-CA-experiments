@@ -62,17 +62,35 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		iR := i * 4
 		upR := up * 4
 		lftR := lft * 4
-		ival := bavg(grid.Pixels[iR : iR+3]...)
+		ival := bavg(grid.Pixels[iR : iR+3]...) // averaged value of pixel colors
 		uval := bavg(grid.Pixels[upR : upR+3]...)
 		lval := bavg(grid.Pixels[lftR : lftR+3]...)
 		results := versusLVSD(ival, uval, lval)
+		/* This method has been too messy. Rethinking
+		vsIndex:= []int{upR, lftR}	//**!** IMPORTANT!!!!! NEED A LIST TO USE INDEX AS REFERENCE BELOW.
+		//! FIND A DIFFERENT WAY TO DO THIS TO AVOID VAGUE LINK BETWEEN LISTS
+		for vs, r:= range results{
+			switch r{
+			case ilose:
+				grid.Pixels[i] = moveToward(grid.Pixels[iR:iR+3],grid.Pixels[])
+			case iwin:
+			case istale:
+			case ifriend:
+			case imine:
 
+
+			}
+
+		}
+		*/
 	}
 }
 func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	rand := make([]byte, 1)
+
 	rndv, e := fastrand.Read(rand)
 	erch(e)
+	_ = rndv //> implement after functional
 	wout := make([]outcome, len(versus))
 	var alignment bool
 	if iClr > 128 { //mc is light
@@ -84,22 +102,31 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	}
 	for i, v := range versus {
 
-		if v == 127 || v == 128 { // nothing if v neutral, or if same team
+		if v == 127 || v == 128 { // mine (future functionality) if v neutral, or if same team
 			wout[i] = imine
-		} else if (v > 128) == alignment {
+		} else if (v > 128) == alignment { // if vs alignment == mc alignment
 			wout[i] = ifriend
-		} else {
+		} else { // the actual battle
+
 			if alignment {
-
+				battle(iClr, v)
 			} else {
-
+				battle(v, iClr)
 			}
 		}
 	}
 
 	return wout
 }
-func battle(lite, dark, rng byte) (lightwin bool) {
+func battle(lite, dark byte) (lightwin bool) {
+	// maybe try a channel to get RNG?
+	// worst case: 127-127+1 = 1 , opposite:127+127-1 = 253 * how to factor in the 1-unit dark advantage
+	lPwr := lite - 128            // min 1 max 127
+	dPwr := dark - 127            // min -127 max -1
+	winpoint := 127 + lPwr + dPwr // skews toward dark
+	fint := int(lPwr)*int(dark) + int(lite%dark)
+	frand := byte(fint % 256)
+	return frand > winpoint
 
 }
 func (grid *GridEntity) applyResult(results []outcome, i int, iVS ...int) {
