@@ -97,7 +97,7 @@ func (g *GameSim) Update() error {
 	if g.RunSimulation > 0 {
 		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
-		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
+		g.maingrid.Img.WritePixels(g.maingrid.Px)
 	}
 	// rotation/movement stuff happn within draw? how driven?
 	//== test box draw move rotate

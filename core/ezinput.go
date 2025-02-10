@@ -26,8 +26,8 @@ func (g *GameSim) callKey(k ebiten.Key) {
 	case ebiten.KeyE:
 
 	case ebiten.KeyR:
-		g.maingrid.Pixels = gfx.Randpx(uint(g.maingrid.Area))
-		g.maingrid.Img.WritePixels(g.maingrid.Pixels)
+		g.maingrid.Px = gfx.Randpx(uint(g.maingrid.Area))
+		g.maingrid.Img.WritePixels(g.maingrid.Px)
 	case ebiten.KeyQ:
 
 	case ebiten.KeyEnter:

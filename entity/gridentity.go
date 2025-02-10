@@ -11,12 +11,14 @@ type GridEntity struct {
 	Img                   *ebiten.Image
 	X, Y                  uint
 	modAdd, modMult, Area int
-	Pixels                []byte
+	Px                    []byte
 	Op                    ebiten.DrawImageOptions
-	Set, Draw             bool // probably not in use
+	Draw                  bool // probably not in use
+	statflags             byte // ()()()()()()()()
 }
 
-type outcome int
+// this is a type alias:
+type outcome = int
 
 const (
 	ineut outcome = iota
@@ -35,8 +37,8 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		Img: ebiten.NewImage(width, height),
 		Op:  ebiten.DrawImageOptions{},
 		X:   uint(width), Y: uint(height), Area: width * height,
-		Set:     true,
-		Pixels:  make([]byte, width*height*4),
+
+		Px:      make([]byte, width*height*4),
 		modAdd:  0,
 		modMult: 1,
 	}
@@ -50,6 +52,23 @@ func (grid *GridEntity) SetMod(modAdd, modMult int) {
 	grid.modAdd = modAdd
 	grid.modMult = modMult
 }
+func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
+	i := ipx * 4
+	e := epx * 4
+
+	switch o {
+	case ineut:
+	case ilose:
+		for n := range 3 {
+
+			grid.Px[i+n] = moveToward(grid.Px[i+n], grid.Px[e+n], 150)
+		}
+	case iwin:
+	case istale:
+	case ifriend:
+	case imine:
+	}
+}
 
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
@@ -62,33 +81,44 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		iR := i * 4
 		upR := up * 4
 		lftR := lft * 4
-		ival := bavg(grid.Pixels[iR : iR+3]...) // averaged value of pixel colors
-		uval := bavg(grid.Pixels[upR : upR+3]...)
-		lval := bavg(grid.Pixels[lftR : lftR+3]...)
-		results := versusLVSD(ival, uval, lval)
-		/* This method has been too messy. Rethinking
-		vsIndex:= []int{upR, lftR}	//**!** IMPORTANT!!!!! NEED A LIST TO USE INDEX AS REFERENCE BELOW.
-		//! FIND A DIFFERENT WAY TO DO THIS TO AVOID VAGUE LINK BETWEEN LISTS
-		for vs, r:= range results{
-			switch r{
-			case ilose:
-				grid.Pixels[i] = moveToward(grid.Pixels[iR:iR+3],grid.Pixels[])
-			case iwin:
-			case istale:
-			case ifriend:
-			case imine:
+		ival := bavg(grid.Px[iR : iR+3]...) // averaged value of pixel colors
+		uval := bavg(grid.Px[upR : upR+3]...)
+		lval := bavg(grid.Px[lftR : lftR+3]...)
 
+		results := versusLVSD(ival, uval, lval) // (currently) return slice of lightWin bools.
+		for res := range results {
+			if res != istale {
 
 			}
-
 		}
+		/*//TODO: 2 options to replace/clean this up
+		//> 1. Have all operations (wrap, get R index, bavg, versusLVSD, apply results) in a loop
+		//> 	1 loop = 1 battle (1 pair pixels vs) [This requires versusLVSD be rewritten]
+		//> 2. Just do all of this shit in versusLVSD and return new pixel OR make it a method w/no return.
 		*/
+		//For now its 2 cases. just do it twice.
+
 	}
+}
+
+// ? Do we need to be usint 255 or 256 here for these.
+func moveToward(from, to byte, amount byte) byte {
+
+	var dfin int
+	dist := int(to) - int(from)
+	dmult := dist * int(amount)
+	if dmult >= 255 {
+		dfin = dmult / 255
+	} else {
+		dfin = dist
+	}
+	return from + byte(dfin)
+
 }
 func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	rand := make([]byte, 1)
 
-	rndv, e := fastrand.Read(rand)
+	rndv, e := fastrand.Read(rand) //fix later
 	erch(e)
 	_ = rndv //> implement after functional
 	wout := make([]outcome, len(versus))
@@ -97,27 +127,35 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 		alignment = true
 	} else if iClr < 127 { //mc is dark
 		alignment = false
-	} else { //true neutral, when iClr=127 or 128. But this needs adjusting.
+	} else { //true neutral, when iClr=127 or 128. may adjusting.
 		return wout //spec guarantees 0s
 	}
 	for i, v := range versus {
 
-		if v == 127 || v == 128 { // mine (future functionality) if v neutral, or if same team
+		if v == 127 || v == 128 { // mine (future functionality) if v neutral
 			wout[i] = imine
 		} else if (v > 128) == alignment { // if vs alignment == mc alignment
 			wout[i] = ifriend
 		} else { // the actual battle
-
-			if alignment {
-				battle(iClr, v)
+			var lightwin bool
+			if alignment { //i light
+				lightwin = battle(iClr, v)
 			} else {
-				battle(v, iClr)
+				lightwin = battle(v, iClr)
+			}
+			if lightwin == alignment {
+				//i won
 			}
 		}
 	}
 
 	return wout
 }
+func battlemc(alignment bool, mainchar, enemy, rng byte) {
+
+}
+
+// we are going to simplify: see battlemc
 func battle(lite, dark byte) (lightwin bool) {
 	// maybe try a channel to get RNG?
 	// worst case: 127-127+1 = 1 , opposite:127+127-1 = 253 * how to factor in the 1-unit dark advantage
@@ -148,10 +186,10 @@ func wrapRange(start, len, add, mult int, limit int) (int, int) {
 // (keep pixlock for now) pixlock false allows offset color value averaging (i.e. blue vs red channel).
 func (grid *GridEntity) SimstepValueShift(pixLock bool) {
 	if !pixLock {
-		for i := 0; i < len(grid.Pixels); i += 4 {
-			//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Pixels))
-			first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Pixels))
-			grid.pxGoToward(i, grid.Pixels[first:last])
+		for i := 0; i < len(grid.Px); i += 4 {
+			//newR := shiftMod(i, grid.modAdd, grid.modMult, len(grid.Px))
+			first, last := wrapRange(i, 3, grid.modAdd, grid.modMult, len(grid.Px))
+			grid.pxGoToward(i, grid.Px[first:last])
 		}
 	} else {
 		for i := 0; i < grid.Area; i++ {
@@ -159,35 +197,35 @@ func (grid *GridEntity) SimstepValueShift(pixLock bool) {
 			newPix := shiftMod(i, grid.modAdd, grid.modMult, grid.Area)
 			newR := newPix * 4 //area to RGB, will always land on R val
 
-			grid.pxGoToward(iR, grid.Pixels[newR:newR+3])
+			grid.pxGoToward(iR, grid.Px[newR:newR+3])
 		}
 
 	}
 }
 func (grid *GridEntity) pxGoToward(indexR int, toPx []byte) {
 	for i := range 3 {
-		if grid.Pixels[indexR+i] > toPx[i] {
-			grid.Pixels[indexR+i] -= (grid.Pixels[indexR+i] - toPx[i]) / 2
+		if grid.Px[indexR+i] > toPx[i] {
+			grid.Px[indexR+i] -= (grid.Px[indexR+i] - toPx[i]) / 2
 		} else {
-			grid.Pixels[indexR+i] += (toPx[i] - grid.Pixels[indexR+i]) / 2
+			grid.Px[indexR+i] += (toPx[i] - grid.Px[indexR+i]) / 2
 		}
 	}
 }
 func (grid *GridEntity) pxReplace(indexR int, new []byte) {
-	grid.Pixels[indexR] = new[0]
-	grid.Pixels[indexR+1] = new[1]
-	grid.Pixels[indexR+2] = new[2]
+	grid.Px[indexR] = new[0]
+	grid.Px[indexR+1] = new[1]
+	grid.Px[indexR+2] = new[2]
 }
 
-// pxTransplant overwrites 1px (3 indices) in grid.Pixels, starting at index
+// pxTransplant overwrites 1px (3 indices) in grid.Px, starting at index
 // write uses values at indices R,G,B without changes made during the function call
 func (grid *GridEntity) pxTransplant(index int, R, G, B int) {
-	var nR byte = grid.Pixels[R]
-	var nG byte = grid.Pixels[G]
-	var nB byte = grid.Pixels[B]
-	grid.Pixels[index] = nR
-	grid.Pixels[index+1] = nG
-	grid.Pixels[index+2] = nB
+	var nR byte = grid.Px[R]
+	var nG byte = grid.Px[G]
+	var nB byte = grid.Px[B]
+	grid.Px[index] = nR
+	grid.Px[index+1] = nG
+	grid.Px[index+2] = nB
 }
 
 //==Old, probably entirely unnecessary==
