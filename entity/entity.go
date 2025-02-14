@@ -64,13 +64,18 @@ func wrap(val, limit int) int {
 	return ((val % limit) + limit) % limit
 }
 
-func sidewrap(index, move, row int) int {
-	if move > row {
-		move %= row //ensure move < row
-	}
-	ifr := index / row
-	imfr := (index + move) / row
-	return index + move + row*(ifr-imfr) // adds or subtacts 1 row to align
+func sidewrap(index, move, width int) int {
+
+	move %= width //ensure move < row
+
+	ifr := index / width
+	imfr := (index + move) / width
+	return (index + move + width) * (ifr - imfr) // adds or subtacts 1 row to align
+	/*given: index = 0
+	(index+move) = -1
+
+
+	*/
 }
 
 func bavg(b ...byte) (avg byte) {
@@ -85,21 +90,3 @@ func erch(e error) {
 		panic(e)
 	}
 }
-
-// TestSimulate removed 2-2-25
-//also: moveBhalf, colorDistanceVS, coloravg, bavg. unused
-
-//>Sidewrap: wip code before simplifying:
-/*
-if ifr == imfr {
-		return index + move
-	}
-	// move is guaranteed < row
-	if ifr > imfr { //wrap left
-
-		return index+move+row
-	} else if index/row < (index+move)/row { //wrap right
-		return index+move-row
-	}
-	return index
-*/

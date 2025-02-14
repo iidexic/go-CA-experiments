@@ -78,9 +78,12 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 
 		up := wrap(i-int(grid.X), grid.Area)
 		lft := sidewrap(i, -1, int(grid.X))
-		iR := i * 4
+		iR := i * 4 //*= Max R = (2073600, or 3686400)
 		upR := up * 4
 		lftR := lft * 4
+		//*=MAXIMUM up pixels--> (540x960 = 514k, 1280x720 = 921600)
+		//fmt.Println("px up: ", up, ", px lf: ", lft)
+		//fmt.Println(iR, upR, lftR)
 		ival := bavg(grid.Px[iR : iR+3]...) // averaged value of pixel colors
 		uval := bavg(grid.Px[upR : upR+3]...)
 		lval := bavg(grid.Px[lftR : lftR+3]...)
@@ -123,13 +126,20 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	_ = rndv //> implement after functional
 	wout := make([]outcome, len(versus))
 	var alignment bool
+	//=====================================
 	if iClr > 128 { //mc is light
 		alignment = true
 	} else if iClr < 127 { //mc is dark
 		alignment = false
-	} else { //true neutral, when iClr=127 or 128. may adjusting.
+	} else { //true neutral, when iClr=127 or 128. may take adjusting.
 		return wout //spec guarantees 0s
 	}
+	/*
+		if iClr == 127 || iClr == 128 {
+			return wout
+		}
+		alignment:=iClr>128
+	*/
 	for i, v := range versus {
 
 		if v == 127 || v == 128 { // mine (future functionality) if v neutral
@@ -144,20 +154,30 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 				lightwin = battle(v, iClr)
 			}
 			if lightwin == alignment {
-				//i won
+				wout[i] = iwin
+			} else {
+				wout[i] = ilose
 			}
 		}
 	}
 
 	return wout
 }
-func battlemc(alignment bool, mainchar, enemy, rng byte) {
 
+// battlemc takes mc and enemy, and returns
+// for bool: return lightVictor && (mainchar>128)
+func battlemc(mainchar, enemy, rng byte) (mcWin int) {
+	var victoryLine byte = mainchar + enemy - 128
+	mcWin = int(rng) - int(victoryLine)
+	if mainchar < 127 {
+		return -mcWin
+	}
+	return mcWin
 }
 
 // we are going to simplify: see battlemc
 func battle(lite, dark byte) (lightwin bool) {
-	// maybe try a channel to get RNG?
+	// maybe try a channel to get RNG? (would still need to pass or call internally)
 	// worst case: 127-127+1 = 1 , opposite:127+127-1 = 253 * how to factor in the 1-unit dark advantage
 	lPwr := lite - 128            // min 1 max 127
 	dPwr := dark - 127            // min -127 max -1
@@ -227,5 +247,3 @@ func (grid *GridEntity) pxTransplant(index int, R, G, B int) {
 	grid.Px[index+1] = nG
 	grid.Px[index+2] = nB
 }
-
-//==Old, probably entirely unnecessary==
