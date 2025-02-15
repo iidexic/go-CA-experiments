@@ -16,8 +16,8 @@ import (
 var (
 	PixWidth    int  = 1280
 	PixHeight   int  = 720
-	GameWidth   int  = 960 //16
-	GameHeight  int  = 540 //9
+	GameWidth   int  = 480 //16 (960)
+	GameHeight  int  = 270 //9 (540)
 	tick, frame uint = 0, 0
 	layoutCount int  = 0
 )

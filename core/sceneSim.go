@@ -76,16 +76,11 @@ func (g *GameSim) tsqRotAroundCenter(rad float64) {
 }
 func (g *GameSim) testSquarePosition() {
 	//** to do not corner rotation, shift - 1/2 of bounds xy, then shift back.
-	//* This would have to be done before translation happens every step??
-	// Do we like un-translate right after the fucking draw or what
 	w, h := g.sqr.Img.Bounds().Dx(), g.sqr.Img.Bounds().Dy() //grab bounds
 	g.sqr.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)   //center the origin
-	g.sqr.GeoM.Rotate(float64(1) / 96.0 * math.Pi / 6)       // perform rotate. uncertain exact purpose of div/mult
+	g.sqr.GeoM.Rotate(float64(1) / 96.0 * math.Pi / 6)       // perform rotate.
 	g.sqr.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)     //put back to proper location
-	//? Can we include current geom translate? I think so
-	//? Next line somehow did not fuck things up in flappy, seems like the actual translation? I can't tell.
-	// Could also be the sprite change? Seems super unlikely though.
-	//g.sqr.GeoM.Translate(float64(20.0/16.0), float64(20.0/16.0))
+	//g.sqr.GeoM.Translate(float64(20.0/16.0), float64(20.0/16.0)) //>from original code, uncertain
 }
 
 //===============================================================
