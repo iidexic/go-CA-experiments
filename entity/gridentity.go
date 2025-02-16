@@ -67,6 +67,23 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 
 			grid.Px[e+n] = moveToward(grid.Px[e+n], grid.Px[i+n], 150)
 		}
+	case ifriend:
+		// trade biggest diff:
+		difP := make([]int, 3)
+		var iMaxDiff int
+		for n := range difP {
+			difP[n] = int(grid.Px[e+n]) - int(grid.Px[i+n])
+			if difP[n] < 0 {
+				difP[n] = -difP[n]
+			}
+			if difP[n] > difP[iMaxDiff] {
+				iMaxDiff = n
+			}
+		}
+		//^TEMPORARY!!:
+		dT := grid.Px[i+iMaxDiff]
+		grid.Px[i+iMaxDiff] = grid.Px[e+iMaxDiff]
+		grid.Px[e+iMaxDiff] = dT
 	}
 }
 
@@ -162,9 +179,9 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 // battlemc takes mc and enemy, and returns result
 // Output int: sign = win/lose, size = by how much. (for bool: return lightVictor && mainchar>128)
 func battlemc(mainchar, enemy, rng byte) (mcWin int) {
-	var victoryLine byte = mainchar + enemy - 128 	//r<victoryLine = lightWin
-	mcWin = int(rng) - int(victoryLine) 			// positive = lightWin
-	if mainchar < 127 {								// if mc is not light, switch lightwin to darkwin
+	var victoryLine byte = mainchar + enemy - 128 //r<victoryLine = lightWin
+	mcWin = int(rng) - int(victoryLine)           // positive = lightWin
+	if mainchar < 127 {                           // if mc is not light, switch lightwin to darkwin
 		return -mcWin
 	}
 	return mcWin
