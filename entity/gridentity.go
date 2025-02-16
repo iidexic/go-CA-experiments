@@ -159,12 +159,12 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	return wout
 }
 
-// battlemc takes mc and enemy, and returns
-// for bool: return lightVictor && (mainchar>128)
+// battlemc takes mc and enemy, and returns result
+// Output int: sign = win/lose, size = by how much. (for bool: return lightVictor && mainchar>128)
 func battlemc(mainchar, enemy, rng byte) (mcWin int) {
-	var victoryLine byte = mainchar + enemy - 128
-	mcWin = int(rng) - int(victoryLine) // RNG +128-mc-enemy -> mcWin =
-	if mainchar < 127 {
+	var victoryLine byte = mainchar + enemy - 128 	//r<victoryLine = lightWin
+	mcWin = int(rng) - int(victoryLine) 			// positive = lightWin
+	if mainchar < 127 {								// if mc is not light, switch lightwin to darkwin
 		return -mcWin
 	}
 	return mcWin

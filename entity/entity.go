@@ -64,18 +64,14 @@ func wrap(val, limit int) int {
 	return ((val % limit) + limit) % limit
 }
 
+// TODO: Messy implementation. Fix later if desired.
 func sidewrap(index, move, width int) int {
+	//[Treat as if wrapping around 1 single row]
+	irownum := index / width
+	iWrap := index % width
+	wrapMoved := ((iWrap+(move%width))%width + width) % width
+	return wrapMoved + (irownum * width)
 
-	move %= width //ensure move < row
-
-	ifr := index / width
-	imfr := (index + move) / width
-	return (index + move + width) * (ifr - imfr) // adds or subtacts 1 row to align
-	/*given: index = 0
-	(index+move) = -1
-
-
-	*/
 }
 
 func bavg(b ...byte) (avg byte) {
