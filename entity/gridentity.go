@@ -15,6 +15,7 @@ type GridEntity struct {
 	Op                    ebiten.DrawImageOptions
 	Draw                  bool // probably not in use
 	statflags             byte // ()()()()()()()()
+	pxsize                byte
 }
 
 // this is a type alias:
@@ -92,7 +93,6 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 
 	for i := 0; i < grid.Area; i++ {
-
 		up := wrap(i-int(grid.X), grid.Area)
 		lft := sidewrap(i, -1, int(grid.X))
 		iR := i * 4
@@ -106,18 +106,6 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		results := versusLVSD(ival, uval, lval) // (currently) return slice of lightWin bools.
 		grid.exec1v1(results[0], i, up)
 		grid.exec1v1(results[1], i, lft)
-		/*//TODO: 2 options to replace/clean this up
-		//> 1. Have all operations (wrap, get R index, bavg, versusLVSD, apply results) in a loop
-		//> 	1 loop = 1 battle (1 pair pixels vs) [This requires versusLVSD be rewritten]
-		//> 2. Just do all of this shit in versusLVSD and return new pixel OR make it a method w/no return.
-		*/
-		//For now its 2 cases. just do it twice.
-
-	}
-}
-func (grid *GridEntity) px2px(i, to, amt byte) {
-	if grid.Px[i] > grid.Px[to] {
-		grid.Px[i] += ((grid.Px[i] - grid.Px[to]) * amt) % 255
 	}
 }
 
@@ -137,7 +125,6 @@ func moveToward(from, to byte, amount byte) byte {
 		dfin = dist
 	}
 	return from + byte(dfin)
-
 }
 func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	rand := make([]byte, 1)
@@ -177,7 +164,7 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 }
 
 // battlemc takes mc and enemy, and returns result
-// Output int: sign = win/lose, size = by how much. (for bool: return lightVictor && mainchar>128)
+// Output int: sign = win/lose, size = by how much.
 func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 	var victoryLine byte = mainchar + enemy - 128 //r<victoryLine = lightWin
 	mcWin = int(rng) - int(victoryLine)           // positive = lightWin
@@ -193,7 +180,7 @@ func battle(lite, dark byte) (lightwin bool) {
 	// worst case: 127-127+1 = 1 , opposite:127+127-1 = 253 * how to factor in the 1-unit dark advantage
 	lPwr := lite - 128                                   // min 1 max 127
 	dPwr := dark - 127                                   // min -127 max -1
-	winpoint := 127 + lPwr + dPwr                        // skews toward dark
+	winpoint := 128 + lPwr + dPwr                        // skews toward dark. PREVIOUSLY 127
 	fint := int(lPwr)*int(dark) + int((lite+1)%(dark+1)) //!!!ERROR DIV BY ZERO WITHOUT +1
 	frand := byte(fint % 256)
 	return frand > winpoint

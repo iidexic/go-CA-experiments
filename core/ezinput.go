@@ -31,19 +31,29 @@ func (g *GameSim) callKey(k ebiten.Key) {
 	case ebiten.KeyQ:
 
 	case ebiten.KeyEnter:
-		if g.RunSimulation > 0 {
-			g.RunSimulation = 0
-		} else {
-			g.RunSimulation = 1
+		g.SimSpeed = -g.SimSpeed
+		if g.SimSpeed == 0 {
+			g.SimSpeed += 5
 		}
 	case ebiten.KeyArrowUp:
-		g.modAdd++
-		if g.modAdd < 16 {
-			g.modAdd = g.modMult
+		if 0 < g.SimSpeed && g.SimSpeed < 12 {
+			g.SimSpeed++
+		} else if g.SimSpeed < 24 {
+			g.SimSpeed += 2
+		} else if g.SimSpeed < 36 {
+			g.SimSpeed += 4
+		} else if g.SimSpeed < 56 {
+			g.SimSpeed += 8
 		}
 	case ebiten.KeyArrowDown:
-		if g.modAdd > 0 {
-			g.modAdd--
+		if 1 < g.SimSpeed && g.SimSpeed < 12 {
+			g.SimSpeed--
+		} else if g.SimSpeed < 24 {
+			g.SimSpeed -= 2
+		} else if g.SimSpeed < 36 {
+			g.SimSpeed -= 4
+		} else if g.SimSpeed < 56 {
+			g.SimSpeed -= 8
 		}
 	case ebiten.KeyArrowLeft:
 		if g.modMult > 0 {

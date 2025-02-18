@@ -27,20 +27,21 @@ type GameSim struct {
 	entlist                          []entity.Entity
 	pal                              []color.RGBA
 	gWidth, gHeight, pWidth, pHeight int
-	RunSimulation, modAdd, modMult   int
+	SimSpeed, modAdd, modMult, uTix  int
 	sqr                              *entity.BaseEntity
+	ticks                            uint16
 }
 
 // GameSimInit returns GameSim pointer for main sim scene with default settings
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	g := &GameSim{
-		RunSimulation: 0,
-		modAdd:        1,
-		modMult:       4,
-		gWidth:        GameSimWidth,
-		gHeight:       GameSimHeight,
-		maingrid:      entity.MakeGridDefault(GameSimWidth, GameSimHeight),
-		pal:           gfx.PaletteGP,
+		SimSpeed: 1,
+		modAdd:   1,
+		modMult:  4,
+		gWidth:   GameSimWidth,
+		gHeight:  GameSimHeight,
+		maingrid: entity.MakeGridDefault(GameSimWidth, GameSimHeight),
+		pal:      gfx.PaletteGP,
 	}
 	//==== TESTING STUFF ====
 	g.sqr = makeSquare(16, 16)
@@ -80,24 +81,17 @@ func (g *GameSim) testSquarePosition() {
 	g.sqr.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)   //center the origin
 	g.sqr.GeoM.Rotate(float64(1) / 96.0 * math.Pi / 6)       // perform rotate.
 	g.sqr.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)     //put back to proper location
-	//g.sqr.GeoM.Translate(float64(20.0/16.0), float64(20.0/16.0)) //>from original code, uncertain
 }
 
-//===============================================================
-
-// Update GameSim - GameSim logic, assume locked at 60TPS.
+// Update function
 func (g *GameSim) Update() error {
 	g.debugUpdate()
-
-	if g.RunSimulation > 0 {
+	g.ticks++
+	if g.SimSpeed > 0 && g.isSimTick() {
 		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
 		g.maingrid.Img.WritePixels(g.maingrid.Px)
 	}
-	// rotation/movement stuff happn within draw? how driven?
-	//== test box draw move rotate
-
-	//==
 	inputActions(g)
 	return nil
 }
@@ -110,14 +104,15 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 	if g.maingrid.Draw {
 		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
 	}
-	//*= entitylist temporarily not in use.
-	// g.drawEntityList(screen)
 	g.testSquarePosition()
 	//== test sqr draw
 	screen.DrawImage(g.sqr.Img, g.sqr.Opt)
 
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 120, 0)
 
+}
+func (g *GameSim) isSimTick() bool {
+	return int(g.ticks)%(g.SimSpeed /*64-g.SimSpeed*/) == 0
 }
 func (g *GameSim) drawEntityList(screen *ebiten.Image) {
 	for _, ent := range g.entlist {
@@ -136,5 +131,5 @@ func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
 	input.GetInKB() //DEBUG USE
-	util.Dbg.UpdateDetail = fmt.Sprintf("||U:add/shift=%d, multBitmax=%d", g.modAdd, g.modMult)
+	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d UT:%d", g.SimSpeed, g.uTix)
 }
