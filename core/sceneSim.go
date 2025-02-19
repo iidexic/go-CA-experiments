@@ -17,14 +17,9 @@ func testMove(op *ebiten.DrawImageOptions) {
 	op.GeoM.Translate(1, 1)
 }
 
-type numeric interface {
-	int | ~uint | ~float64
-}
-
 // GameSim struct - ebiten
 type GameSim struct {
 	maingrid                         *entity.GridEntity
-	entlist                          []entity.Entity
 	pal                              []color.RGBA
 	gWidth, gHeight, pWidth, pHeight int
 	SimSpeed, modAdd, modMult, uTix  int
@@ -63,14 +58,14 @@ func makeSquare(width, height int) *entity.BaseEntity {
 	return sq
 }
 
-// ** This seems wack
-func centr[N1, N2, N3, N4 numeric](width N1, height N2, tx N3, ty N4) (float64, float64) {
-	return (float64(width) + float64(tx)) / 2, (float64(height) + float64(ty)) / 2
+// ** This seems wack. But will take any number type...
+func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
+	return (width + tx) / 2, (height + ty) / 2
 }
 func (g *GameSim) tsqRotAroundCenter(rad float64) {
 	w, h := g.sqr.Img.Bounds().Dx(), g.sqr.Img.Bounds().Dy()
 	tx, ty := g.sqr.GeoM.Element(2, 0), g.sqr.GeoM.Element(2, 1)
-	dcentrX, dcentrY := centr(w, h, tx, ty)
+	dcentrX, dcentrY := centr(float64(w), float64(h), float64(tx), float64(ty))
 	g.sqr.GeoM.Translate(dcentrX, dcentrY) //center the origin
 	g.sqr.GeoM.Rotate(rad)
 
@@ -113,11 +108,6 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 }
 func (g *GameSim) isSimTick() bool {
 	return int(g.ticks)%(g.SimSpeed /*64-g.SimSpeed*/) == 0
-}
-func (g *GameSim) drawEntityList(screen *ebiten.Image) {
-	for _, ent := range g.entlist {
-		screen.DrawImage(ent.GetImg(), ent.GetOpt())
-	}
 }
 
 // Layout of GameSim window (screen/GameSim)
