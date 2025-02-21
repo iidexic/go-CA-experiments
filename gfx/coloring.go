@@ -74,7 +74,6 @@ func Imagenoise(img *ebiten.Image) {
 /*
 type indexWB int
 
-// Color names for PaletteWB
 const (
 	WBDark indexWB = iota
 	WBBrown
@@ -90,7 +89,6 @@ const (
 	WBGreen
 )
 
-// PaletteWB holds primary palette. use with Colorselect
 var PaletteWB []color.RGBA = []color.RGBA{
 	{43, 40, 33, 255},
 	{98, 76, 60, 255},

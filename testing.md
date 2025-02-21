@@ -1,10 +1,12 @@
 ```go
 
+```
+
+```go
+
 import "fmt"
 
-for g:= range 3{
-fmt.Println(g)
-}
+
 ```
 
 ```go

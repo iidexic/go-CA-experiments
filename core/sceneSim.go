@@ -25,19 +25,22 @@ type GameSim struct {
 	SimSpeed, modAdd, modMult, uTix  int
 	sqr                              *entity.BaseEntity
 	ticks                            uint16
+	rngen                            *gfx.QuickRNG
 }
 
 // GameSimInit returns GameSim pointer for main sim scene with default settings
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
+	rng := gfx.GetQuickRNG(64)
 	g := &GameSim{
 		SimSpeed: 1,
 		modAdd:   1,
 		modMult:  4,
 		gWidth:   GameSimWidth,
 		gHeight:  GameSimHeight,
-		maingrid: entity.MakeGridDefault(GameSimWidth, GameSimHeight),
 		pal:      gfx.PaletteGP,
+		rngen:    &rng,
 	}
+	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight, g.rngen.C)
 	//==== TESTING STUFF ====
 	g.sqr = makeSquare(16, 16)
 
@@ -58,7 +61,6 @@ func makeSquare(width, height int) *entity.BaseEntity {
 	return sq
 }
 
-// ** This seems wack. But will take any number type...
 func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
 	return (width + tx) / 2, (height + ty) / 2
 }

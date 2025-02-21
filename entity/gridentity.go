@@ -11,11 +11,14 @@ type GridEntity struct {
 	Img                   *ebiten.Image
 	X, Y                  uint
 	modAdd, modMult, Area int
-	Px                    []byte
+	Px, mem               []byte
+	memsize               int
 	Op                    ebiten.DrawImageOptions
 	Draw                  bool // probably not in use
-	statflags             byte // ()()()()()()()()
-	pxsize                byte //? Probably scale at GeoM instead of trying to add here.
+	//? Probably scale at GeoM instead of trying to add here.
+	//~ Actually now Im not 100% on the best way. Aperture?
+	pxsize byte
+	crng   chan byte
 }
 
 // this is a type alias:
@@ -32,7 +35,7 @@ const (
 )
 
 // MakeGridDefault generates base CA grid
-func MakeGridDefault(gWidth, gHeight int) *GridEntity {
+func MakeGridDefault(gWidth, gHeight int, chanRNG chan byte) *GridEntity {
 	width := (3 * gWidth) / 4
 	height := (3 * gHeight) / 4
 	grid := GridEntity{
@@ -40,7 +43,8 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		Op:  ebiten.DrawImageOptions{},
 		X:   uint(width), Y: uint(height), Area: width * height,
 
-		Px:      make([]byte, width*height*4),
+		Px: make([]byte, width*height*4),
+
 		modAdd:  0,
 		modMult: 1,
 	}
@@ -129,7 +133,6 @@ func moveToward(from, to byte, amount byte) byte {
 }
 func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	rand := make([]byte, 1)
-
 	rndv, e := fastrand.Read(rand) //fix later
 	erch(e)
 	_ = rndv //> implement after functional
