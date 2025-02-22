@@ -26,3 +26,9 @@ func GetJustPressedKeys() []ebiten.Key {
 func KeysOut() *[]ebiten.Key {
 	return &keysPressed
 }
+
+// KeyHandler
+type keyhandler struct {
+	keys  []ebiten.Key
+	binds []int
+}

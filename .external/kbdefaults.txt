@@ -3,7 +3,9 @@
 
 [26-AltLeft] [27-AltRight] [28-ArrowDown] [29-ArrowLeft] [30-ArrowRight] [31-ArrowUp]
 [32-Backquote] [33-Backslash] [34-Backspace] [35-BracketLeft] [36-BracketRight] [37-CapsLock] [38-Comma]
-[39-ContextMenu] [40-ControlLeft] [41-ControlRight] [42-Delete] 
+[39-ContextMenu] (the logitech has one of these. Basically just a keyboard right-click)
+[40-ControlLeft] [41-ControlRight] (LCtrl,RCtrl)
+[42-Delete] 
 [43-Digit0] [44-Digit1] [45-Digit2] [46-Digit3] [47-Digit4] [48-Digit5] [49-Digit6] [50-Digit7] [51-Digit8] [52-Digit9] 
 
 [53-End] [54-Enter] [55-Equal] [56-Escape] 
@@ -11,7 +13,9 @@
 [57-F1] [58-F2] [59-F3] [60-F4] [61-F5] [62-F6] [63-F7] [64-F8] [65-F9] [66-F10] [67-F11] [68-F12] 
 [69-F13] [70-F14] [71-F15] [72-F16] [73-F17] [74-F18] [75-F19] [76-F20] [77-F21] [78-F22] [79-F23] [80-F24] 
 
-[81-Home] [82-Insert] [83-IntlBackslas] [84-MetaLeft] [85-MetaRight] [86-Minus] [87-NumLock] 
+[81-Home] [82-Insert] [83-IntlBackslas] 
+[84-MetaLeft] [85-MetaRight] (most likely windows keys)
+[86-Minus] [87-NumLock] 
 [88-Numpad0] [89-Numpad1] [90-Numpad2] [91-Numpad3] [92-Numpad4] 
 [93-Numpad5] [94-Numpad6] [95-Numpad7] [96-Numpad8] [97-Numpad9] 
 [98-NumpadAdd] [99-NumpadDecima] [100-NumpadDivide] [101-NumpadEnter] 

@@ -2,9 +2,15 @@ package core
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/iidexic/go-CA-experiments/entity"
 	"github.com/iidexic/go-CA-experiments/gfx"
-	"github.com/iidexic/go-CA-experiments/input"
 )
+
+var assignedKeys = []ebiten.Key{ebiten.KeyE, ebiten.KeyG, ebiten.KeyR, ebiten.KeyQ,
+	ebiten.KeyArrowDown, ebiten.KeyArrowUp,
+	ebiten.KeyArrowLeft, ebiten.KeyArrowRight,
+	ebiten.KeyEnter}
 
 func inputActions(g *GameSim) {
 	//cursX,cursY:=ebiten.CursorPosition()
@@ -14,10 +20,23 @@ func inputActions(g *GameSim) {
 	} else if wy < 0 {
 		//mouseWheelDown
 	}
-	for _, k := range input.GetJustPressedKeys() {
+	g.presstime(assignedKeys)
+	/* replacing with presstime
+	kbKeys := input.GetJustPressedKeys()
+	var kbHold []ebiten.Key = make([]ebiten.Key, 0, 24)
+	for _, k := range kbKeys {
 		g.callKey(k)
 	}
-
+	*/
+}
+func (g *GameSim) presstime(kbKeys []ebiten.Key) {
+	for _, key := range kbKeys {
+		//= repeat behavior
+		intime := inpututil.KeyPressDuration(key)
+		if intime == 1 || (intime > 20 && intime%6 == 0) {
+			g.callKey(key)
+		}
+	}
 }
 func (g *GameSim) callKey(k ebiten.Key) {
 	switch k {
@@ -55,13 +74,10 @@ func (g *GameSim) callKey(k ebiten.Key) {
 		} else if g.SimSpeed < 56 {
 			g.SimSpeed -= 8
 		}
+
 	case ebiten.KeyArrowLeft:
-		if g.modMult > 0 {
-			g.modMult--
-		}
+		entity.CutoffDown()
 	case ebiten.KeyArrowRight:
-		if g.modMult < 16 { //somewhat arbitrary
-			g.modMult++
-		}
+		entity.CutoffUp()
 	}
 }

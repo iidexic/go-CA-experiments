@@ -15,10 +15,8 @@ type GridEntity struct {
 	memsize               int
 	Op                    ebiten.DrawImageOptions
 	Draw                  bool // probably not in use
-	//? Probably scale at GeoM instead of trying to add here.
-	//~ Actually now Im not 100% on the best way. Aperture?
-	pxsize byte
-	crng   chan byte
+	pxsize                byte
+	crng                  chan byte
 }
 
 // this is a type alias:
@@ -33,6 +31,8 @@ const (
 	ifriend
 	imine
 )
+
+var testCutoff byte = 128
 
 // MakeGridDefault generates base CA grid
 func MakeGridDefault(gWidth, gHeight int, chanRNG chan byte) *GridEntity {
@@ -150,17 +150,28 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 		} else if (v > 128) == alignment { // if vs alignment == mc alignment
 			wout[i] = ifriend
 		} else { // the actual battle
-			var lightwin bool
-			if alignment { //i light
-				lightwin = battle(iClr, v)
-			} else {
-				lightwin = battle(v, iClr)
-			}
-			if lightwin == alignment {
+			rval := battlemc(iClr, v, testCutoff)
+			switch {
+			case rval > 0:
 				wout[i] = iwin
-			} else {
+			case rval < 0:
 				wout[i] = ilose
+			case rval == 0:
+				wout[i] = istale
 			}
+			/*
+				var lightwin bool
+				if alignment { //i light
+					lightwin = battle(iClr, v)
+				} else {
+					lightwin = battle(v, iClr)
+				}
+				if lightwin == alignment {
+					wout[i] = iwin
+				} else {
+					wout[i] = ilose
+				}
+			*/
 		}
 	}
 
@@ -178,15 +189,35 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 	return mcWin
 }
 
-// we are going to simplify: see battlemc
-func battle(lite, dark byte) (lightwin bool) {
-	// maybe try a channel to get RNG? (would still need to pass or call internally)
-	// worst case: 127-127+1 = 1 , opposite:127+127-1 = 253 * how to factor in the 1-unit dark advantage
-	lPwr := lite - 128                                   // min 1 max 127
-	dPwr := dark - 127                                   // min -127 max -1
-	winpoint := 128 + lPwr + dPwr                        // skews toward dark. PREVIOUSLY 127
-	fint := int(lPwr)*int(dark) + int((lite+1)%(dark+1)) //!!!ERROR DIV BY ZERO WITHOUT +1
-	frand := byte(fint % 256)
-	return frand > winpoint
+// CutoffUp is to manually change victory cutoff to see effects in real-time
+func CutoffUp() {
+	t := testCutoff
+	switch {
+	case t < 148 && t > 108:
+		t++
+	case t >= 148 && t < 250:
+		t += 4
+	case t <= 108 && t > 5:
+		t += 4
+	}
+	testCutoff = t
+}
 
+// CutoffDown is to manually change victory cutoff to see effects in real-time
+func CutoffDown() {
+	t := testCutoff
+	switch {
+	case t < 148 && t > 108:
+		t--
+	case t >= 148 && t < 250:
+		t -= 4
+	case t <= 108 && t > 5:
+		t -= 4
+	}
+	testCutoff = t
+}
+
+// CutoffIs returned
+func CutoffIs() byte {
+	return testCutoff
 }

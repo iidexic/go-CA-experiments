@@ -49,7 +49,7 @@ var Dbg showDebugInfo = showDebugInfo{
 	pixW:        0,
 	pixH:        0,
 	keysAppend:  make([]ebiten.Key, 0, 12),
-	SelectDebug: []int{showTPS, showFPS, nl, showMouseDetail, showKhandlr, showUpdateDetail, showDrawDetail},
+	SelectDebug: []int{showTPS, showFPS, nl, showUpdateDetail, showDrawDetail},
 }
 
 // SetValues currently sets screen values for debug display

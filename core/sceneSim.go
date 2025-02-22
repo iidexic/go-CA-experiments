@@ -13,10 +13,6 @@ import (
 	"github.com/iidexic/go-CA-experiments/util"
 )
 
-func testMove(op *ebiten.DrawImageOptions) {
-	op.GeoM.Translate(1, 1)
-}
-
 // GameSim struct - ebiten
 type GameSim struct {
 	maingrid                         *entity.GridEntity
@@ -32,7 +28,7 @@ type GameSim struct {
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	rng := gfx.GetQuickRNG(64)
 	g := &GameSim{
-		SimSpeed: 1,
+		SimSpeed: -8,
 		modAdd:   1,
 		modMult:  4,
 		gWidth:   GameSimWidth,
@@ -63,14 +59,6 @@ func makeSquare(width, height int) *entity.BaseEntity {
 
 func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
 	return (width + tx) / 2, (height + ty) / 2
-}
-func (g *GameSim) tsqRotAroundCenter(rad float64) {
-	w, h := g.sqr.Img.Bounds().Dx(), g.sqr.Img.Bounds().Dy()
-	tx, ty := g.sqr.GeoM.Element(2, 0), g.sqr.GeoM.Element(2, 1)
-	dcentrX, dcentrY := centr(float64(w), float64(h), float64(tx), float64(ty))
-	g.sqr.GeoM.Translate(dcentrX, dcentrY) //center the origin
-	g.sqr.GeoM.Rotate(rad)
-
 }
 func (g *GameSim) testSquarePosition() {
 	//** to do not corner rotation, shift - 1/2 of bounds xy, then shift back.
@@ -123,5 +111,5 @@ func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
 	input.GetInKB() //DEBUG USE
-	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d UT:%d", g.SimSpeed, g.uTix)
+	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d Cutoff:%d", g.SimSpeed, entity.CutoffIs())
 }
