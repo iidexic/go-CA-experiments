@@ -75,10 +75,15 @@ func (g *GameSim) Update() error {
 	if g.SimSpeed > 0 && g.isSimTick() {
 		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
-		g.maingrid.Img.WritePixels(g.maingrid.Px)
+		if g.maingrid.Debug {
+			g.maingrid.Img.WritePixels(g.maingrid.DebugOverlay())
+		} else {
+			g.maingrid.Img.WritePixels(g.maingrid.Px)
+		}
 	}
 	inputActions(g)
 	return nil
+
 }
 
 // Draw screen

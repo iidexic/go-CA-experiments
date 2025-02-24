@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/iidexic/go-CA-experiments/gfx"
 )
@@ -14,7 +13,7 @@ type GridEntity struct {
 	Px, mem               []byte
 	memsize               int
 	Op                    ebiten.DrawImageOptions
-	Draw                  bool // probably not in use
+	Draw, Debug           bool
 	pxsize                byte
 	crng                  chan byte
 }
@@ -53,6 +52,9 @@ func MakeGridDefault(gWidth, gHeight int, chanRNG chan byte) *GridEntity {
 	return &grid
 }
 
+func (grid *GridEntity) rngv() byte {
+	return <-grid.crng
+}
 func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 	i := ipx * 4
 	e := epx * 4
@@ -69,10 +71,10 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 			grid.Px[e+n] = moveToward(grid.Px[e+n], grid.Px[i+n], 150)
 		}
 	case ifriend:
-		// trade biggest diff:
+		//! Think through this - not workin great
 		difP := make([]int, 3)
 		var iMaxDiff int
-		for n := range difP {
+		for n := range 3 {
 			difP[n] = int(grid.Px[e+n]) - int(grid.Px[i+n])
 			if difP[n] < 0 {
 				difP[n] = -difP[n]
@@ -82,11 +84,13 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 			}
 		}
 		//^TEMPORARY!!:
+
 		dT := grid.Px[i+iMaxDiff]
 		grid.Px[i+iMaxDiff] = grid.Px[e+iMaxDiff]
 		grid.Px[e+iMaxDiff] = dT
 	case imine:
 	case istale:
+		//grid.Px[i]
 	case ineut:
 
 	}
@@ -111,6 +115,7 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		results := versusLVSD(ival, uval, lval) // (currently) return slice of lightWin bools.
 		grid.exec1v1(results[0], i, up)
 		grid.exec1v1(results[1], i, lft)
+
 	}
 }
 
@@ -132,10 +137,6 @@ func moveToward(from, to byte, amount byte) byte {
 	return from + byte(dfin)
 }
 func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
-	rand := make([]byte, 1)
-	rndv, e := fastrand.Read(rand) //fix later
-	erch(e)
-	_ = rndv //> implement after functional
 	wout := make([]outcome, len(versus))
 
 	if iClr == 127 || iClr == 128 {
@@ -159,19 +160,6 @@ func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 			case rval == 0:
 				wout[i] = istale
 			}
-			/*
-				var lightwin bool
-				if alignment { //i light
-					lightwin = battle(iClr, v)
-				} else {
-					lightwin = battle(v, iClr)
-				}
-				if lightwin == alignment {
-					wout[i] = iwin
-				} else {
-					wout[i] = ilose
-				}
-			*/
 		}
 	}
 
@@ -187,6 +175,42 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 		return -mcWin
 	}
 	return mcWin
+} /*
+func (grid *GridEntity) DebugDraw() []byte {
+	overlay:=grid.DebugOverlay()
+	for i:=range(grid.Area){
+
+
+	}
+}
+*/
+
+// DebugOverlay dispays colors based on the current state of pixels.
+// alpha will be used here to use as an overlay on top of the regular grid
+func (grid *GridEntity) DebugOverlay() []byte {
+	overlay := make([]byte, len(grid.Px))
+	for i := range grid.Area {
+		icol := i * 4
+		avgC := bavg(grid.Px[icol : icol+3]...)
+		if avgC == 127 || avgC == 128 { //Neutral
+			overlay[icol] = 127
+			overlay[icol+1] = 127
+			overlay[icol+2] = 127
+			overlay[icol+3] = 40 //alpha
+
+		} else if avgC > 128 { // light = red?
+			overlay[icol] = 255
+			overlay[icol+1] = 20
+			overlay[icol+2] = 20
+			overlay[icol+3] = 40 //alpha
+		} else { // dark = blue
+			overlay[icol] = 20
+			overlay[icol+1] = 20
+			overlay[icol+2] = 120
+			overlay[icol+3] = 10 //alpha
+		}
+	}
+	return overlay
 }
 
 // CutoffUp is to manually change victory cutoff to see effects in real-time
@@ -197,7 +221,7 @@ func CutoffUp() {
 		t++
 	case t >= 148 && t < 250:
 		t += 4
-	case t <= 108 && t > 5:
+	case t <= 108 && t > 2:
 		t += 4
 	}
 	testCutoff = t
@@ -209,7 +233,7 @@ func CutoffDown() {
 	switch {
 	case t < 148 && t > 108:
 		t--
-	case t >= 148 && t < 250:
+	case t >= 148 && t < 252:
 		t -= 4
 	case t <= 108 && t > 5:
 		t -= 4

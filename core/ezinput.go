@@ -21,13 +21,6 @@ func inputActions(g *GameSim) {
 		//mouseWheelDown
 	}
 	g.presstime(assignedKeys)
-	/* replacing with presstime
-	kbKeys := input.GetJustPressedKeys()
-	var kbHold []ebiten.Key = make([]ebiten.Key, 0, 24)
-	for _, k := range kbKeys {
-		g.callKey(k)
-	}
-	*/
 }
 func (g *GameSim) presstime(kbKeys []ebiten.Key) {
 	for _, key := range kbKeys {
@@ -48,7 +41,7 @@ func (g *GameSim) callKey(k ebiten.Key) {
 		g.maingrid.Px = gfx.Randpx(uint(g.maingrid.Area))
 		g.maingrid.Img.WritePixels(g.maingrid.Px)
 	case ebiten.KeyQ:
-
+		g.maingrid.Debug = !g.maingrid.Debug
 	case ebiten.KeyEnter:
 		g.SimSpeed = -g.SimSpeed
 		if g.SimSpeed == 0 {

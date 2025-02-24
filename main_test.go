@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/iidexic/go-CA-experiments/gfx"
 )
 
@@ -16,4 +18,15 @@ func BenchmarkRandpx(b *testing.B) {
 		res = gfx.Randpx(qty)
 	}
 	resultByteSlice = res
+}
+
+func TestSandbox(t *testing.T) {
+	rv := make([]byte, 128)
+	_, _ = fastrand.Read(rv)
+	for _, v := range rv {
+		if v%16 == 0 {
+			fmt.Println(v)
+
+		}
+	}
 }
