@@ -6,15 +6,16 @@ import (
 
 // QuickRNG will provide a channel that loads/buffers random values
 type QuickRNG struct {
-	C   chan byte
-	sl  []byte
-	n   int
-	mod byte
+	C         chan byte
+	sl        []byte
+	n, reload int
+	mod       byte
 }
 
-// GetQuickRNG returns initialized QuickRNG with buffer of 64
+// GetQuickRNG returns initialized QuickRNG with `buff` length channel
 func GetQuickRNG(buff int) QuickRNG {
-	q := QuickRNG{C: make(chan byte, buff), sl: make([]byte, buff), n: buff, mod: 1}
+	q := QuickRNG{C: make(chan byte, buff), sl: make([]byte, buff),
+		n: buff, reload: buff / 8, mod: 1}
 	return q
 }
 
@@ -22,16 +23,18 @@ func GetQuickRNG(buff int) QuickRNG {
 // will call it 0 for now - wonder if this will starve it
 func (q *QuickRNG) ROPcheck() {
 	amount := len(q.C)
-	if amount == 0 {
+	if amount == q.reload {
 		go q.genc()
 	}
 }
 func (q *QuickRNG) genc() {
-	_, e := fastrand.Read(q.sl)
+	fillqty := q.n - len(q.C)
+	_, e := fastrand.Read(q.sl[:fillqty])
+
 	if e != nil {
 		panic(e)
 	}
-	for _, v := range q.sl {
+	for _, v := range q.sl[:fillqty] {
 		q.C <- v
 	}
 }

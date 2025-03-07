@@ -30,6 +30,7 @@ type Wave struct {
 	phaseVal                        []int
 }
 
+/* Not currently in use
 func idWave(shape waveshape) {
 	w := idwave{segments: 4}
 	switch shape {
@@ -37,4 +38,4 @@ func idWave(shape waveshape) {
 		w.tphase = []int{0, 90, 180, 270}
 		w.tamp = []int{127, 255, 128, 0}
 	}
-}
+}*/

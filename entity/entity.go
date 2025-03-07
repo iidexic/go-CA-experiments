@@ -10,17 +10,8 @@ import (
 type Entity interface {
 	GetImg() *ebiten.Image
 	GetOpt() *ebiten.DrawImageOptions
-	GetGeom() *ebiten.GeoM
+	XY() (int, int)
 }
-
-// =======================
-
-// =========Movement Testing========
-func (b *BaseEntity) testMovements() {
-	// dunno
-}
-
-// =================================
 
 // BaseEntity default entity type/debug entity
 type BaseEntity struct {
@@ -64,9 +55,8 @@ func wrap(val, limit int) int {
 	return ((val % limit) + limit) % limit
 }
 
-// TODO: Messy implementation. Fix later if desired.
 func sidewrap(index, move, width int) int {
-	//[Treat as if wrapping around 1 single row]
+	//[Treat as if wrapping around 1 single row, also this code could use cleanup]
 	irownum := index / width
 	iWrap := index % width
 	wrapMoved := ((iWrap+(move%width))%width + width) % width
@@ -81,7 +71,9 @@ func bavg(b ...byte) (avg byte) {
 	}
 	return byte(rval / len(b))
 }
-func erch(e error) {
+
+// Erch check error do checking
+func Erch(e error) {
 	if e != nil {
 		panic(e)
 	}

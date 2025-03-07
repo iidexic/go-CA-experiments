@@ -9,13 +9,14 @@ import (
 type GridEntity struct {
 	Img                   *ebiten.Image
 	X, Y                  uint
+	Bounds                []int
 	modAdd, modMult, Area int
-	Px, mem               []byte
+	Px, mem, Highlight    []byte
 	memsize               int
 	Op                    ebiten.DrawImageOptions
 	Draw, Debug           bool
 	pxsize                byte
-	crng                  chan byte
+	qrng                  gfx.QuickRNG
 }
 
 // this is a type alias:
@@ -34,42 +35,54 @@ const (
 var testCutoff byte = 128
 
 // MakeGridDefault generates base CA grid
-func MakeGridDefault(gWidth, gHeight int, chanRNG chan byte) *GridEntity {
+func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 	width := (3 * gWidth) / 4
 	height := (3 * gHeight) / 4
 	grid := GridEntity{
-		Img: ebiten.NewImage(width, height),
-		Op:  ebiten.DrawImageOptions{},
-		X:   uint(width), Y: uint(height), Area: width * height,
-
-		Px: make([]byte, width*height*4),
-
-		modAdd:  0,
-		modMult: 1,
+		Img:    ebiten.NewImage(width, height),
+		Bounds: make([]int, 4),
+		Op:     ebiten.DrawImageOptions{},
+		X:      uint(width), Y: uint(height), Area: width * height,
+		Px:     make([]byte, width*height*4),
+		modAdd: 0, modMult: 1, //> Unknown if needed
+		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
+		qrng:      gfx.GetQuickRNG(128),
 	}
-	grid.Op.GeoM.Translate(float64((gWidth-width)/2), float64((gHeight-height)/2))
+	grid.Bounds[0] = (gWidth - width) / 2
+	grid.Bounds[2] = grid.Bounds[0] + width
+
+	grid.Bounds[1] = (gHeight - height) / 2
+	grid.Bounds[3] = grid.Bounds[1] + height
+	grid.Op.GeoM.Translate(float64(grid.Bounds[0]), float64(grid.Bounds[1]))
 	grid.Img.Fill(gfx.PaletteGP[gfx.Dark])
 	return &grid
 }
-
-func (grid *GridEntity) rngv() byte {
-	return <-grid.crng
+func (grid *GridEntity) rng() byte {
+	go grid.qrng.ROPcheck()
+	return <-grid.qrng.C
 }
+
+// XY returns grid GeoM tx, ty screen location
+func (grid *GridEntity) XY() (int, int) {
+	return int(grid.Op.GeoM.Element(0, 2)), int(grid.Op.GeoM.Element(1, 2))
+}
+
+/*
+	func (grid *GridEntity) rngv() byte {
+		if len(grid.crng) < 4{
+		}
+		return <-grid.crng
+	}
+*/
 func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 	i := ipx * 4
 	e := epx * 4
 	//removing all but win/lose to troubleshoot for now
 	switch o {
 	case ilose:
-		for n := range 3 {
-
-			grid.Px[i+n] = moveToward(grid.Px[i+n], grid.Px[e+n], 150)
-		}
+		sliceToward(grid.Px[i:i+3], grid.Px[e:e+3], 150)
 	case iwin:
-		for n := range 3 {
-
-			grid.Px[e+n] = moveToward(grid.Px[e+n], grid.Px[i+n], 150)
-		}
+		sliceToward(grid.Px[e:e+3], grid.Px[i:i+3], 150)
 	case ifriend:
 		//! Think through this - not workin great
 		difP := make([]int, 3)
@@ -83,8 +96,6 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 				iMaxDiff = n
 			}
 		}
-		//^TEMPORARY!!:
-
 		dT := grid.Px[i+iMaxDiff]
 		grid.Px[i+iMaxDiff] = grid.Px[e+iMaxDiff]
 		grid.Px[e+iMaxDiff] = dT
@@ -113,9 +124,14 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		lval := bavg(grid.Px[lftR : lftR+3]...)
 
 		results := versusLVSD(ival, uval, lval) // (currently) return slice of lightWin bools.
-		grid.exec1v1(results[0], i, up)
-		grid.exec1v1(results[1], i, lft)
-
+		standinrng := uval ^ lval
+		if standinrng < 128 {
+			grid.exec1v1(results[1], i, lft)
+			grid.exec1v1(results[0], i, up)
+		} else {
+			grid.exec1v1(results[0], i, up)
+			grid.exec1v1(results[1], i, lft)
+		}
 	}
 }
 
@@ -136,6 +152,16 @@ func moveToward(from, to byte, amount byte) byte {
 	}
 	return from + byte(dfin)
 }
+
+// given two slices, moves one toward the other, specified by byte
+// to will loop if from larger than to
+func sliceToward(from, to []byte, amount byte) {
+	lto := len(to)
+	for i := range from {
+		from[i] = moveToward(from[i], to[i%lto], amount)
+	}
+}
+
 func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
 	wout := make([]outcome, len(versus))
 
@@ -175,15 +201,7 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 		return -mcWin
 	}
 	return mcWin
-} /*
-func (grid *GridEntity) DebugDraw() []byte {
-	overlay:=grid.DebugOverlay()
-	for i:=range(grid.Area){
-
-
-	}
 }
-*/
 
 // DebugOverlay dispays colors based on the current state of pixels.
 // alpha will be used here to use as an overlay on top of the regular grid
@@ -193,6 +211,7 @@ func (grid *GridEntity) DebugOverlay() []byte {
 		icol := i * 4
 		avgC := bavg(grid.Px[icol : icol+3]...)
 		if avgC == 127 || avgC == 128 { //Neutral
+
 			overlay[icol] = 127
 			overlay[icol+1] = 127
 			overlay[icol+2] = 127
@@ -218,11 +237,11 @@ func CutoffUp() {
 	t := testCutoff
 	switch {
 	case t < 148 && t > 108:
-		t++
-	case t >= 148 && t < 250:
-		t += 4
-	case t <= 108 && t > 2:
-		t += 4
+		t += 2
+	case t >= 148 && t < 245:
+		t += 8
+	case t <= 108:
+		t += 8
 	}
 	testCutoff = t
 }
@@ -232,11 +251,11 @@ func CutoffDown() {
 	t := testCutoff
 	switch {
 	case t < 148 && t > 108:
-		t--
-	case t >= 148 && t < 252:
-		t -= 4
-	case t <= 108 && t > 5:
-		t -= 4
+		t -= 2
+	case t >= 148 && t < 254:
+		t -= 8
+	case t <= 108 && t > 8:
+		t -= 8
 	}
 	testCutoff = t
 }

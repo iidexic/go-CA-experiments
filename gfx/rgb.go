@@ -33,7 +33,7 @@ func (ipx *RGBi) FromRGBA(pixels []byte) {
 }
 
 // FromRGBAstore populates RGBi with RGBA pixels, while storing Alpha values
-func (ipx *RGBi) FromRGBAstore(pixels []byte) {
+func (ipx *RGBi) fromRGBAstore(pixels []byte) {
 	if len(pixels)%4 > 0 {
 		//idk but do somethin. trim? panic?
 	}
@@ -52,7 +52,7 @@ func (ipx *RGBi) FromRGBAstore(pixels []byte) {
 }
 
 // ToRGBA returns the RGBi image with alpha added back in
-func (ipx *RGBi) ToRGBA() []byte {
+func (ipx *RGBi) toRGBA() []byte {
 	out := make([]byte, 4*len(ipx.c)/3)
 	iold := 0
 	for i := 0; i < len(out)-3; i += 4 {

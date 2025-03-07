@@ -21,33 +21,26 @@ type GameSim struct {
 	SimSpeed, modAdd, modMult, uTix  int
 	sqr                              *entity.BaseEntity
 	ticks                            uint16
-	rngen                            *gfx.QuickRNG
 }
 
 // GameSimInit returns GameSim pointer for main sim scene with default settings
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
-	rng := gfx.GetQuickRNG(64)
 	g := &GameSim{
-		SimSpeed: -8,
+		SimSpeed: -4,
 		modAdd:   1,
 		modMult:  4,
 		gWidth:   GameSimWidth,
 		gHeight:  GameSimHeight,
 		pal:      gfx.PaletteGP,
-		rngen:    &rng,
+		//rngen:    rng, //grident can have its own rng source
 	}
-	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight, g.rngen.C)
+	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight)
 	//==== TESTING STUFF ====
 	g.sqr = makeSquare(16, 16)
-
 	//=======================
 	return g
 }
 
-// ===============================================================
-// Draw/movement testing
-// Trying to use interface to make a more broad approach.
-// But probably just use the struct methods
 func makeSquare(width, height int) *entity.BaseEntity {
 	sq := entity.NewBaseEntity(width, height)
 
@@ -57,9 +50,10 @@ func makeSquare(width, height int) *entity.BaseEntity {
 	return sq
 }
 
-func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
-	return (width + tx) / 2, (height + ty) / 2
-}
+//unused, remove
+
+//	func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
+//		return (width + tx) / 2, (height + ty) / 2 }
 func (g *GameSim) testSquarePosition() {
 	//** to do not corner rotation, shift - 1/2 of bounds xy, then shift back.
 	w, h := g.sqr.Img.Bounds().Dx(), g.sqr.Img.Bounds().Dy() //grab bounds
@@ -95,10 +89,11 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
 	}
 	g.testSquarePosition()
+
 	//== test sqr draw
 	screen.DrawImage(g.sqr.Img, g.sqr.Opt)
 
-	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 120, 0)
+	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 60, 0)
 
 }
 func (g *GameSim) isSimTick() bool {
@@ -115,6 +110,7 @@ func (g *GameSim) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
+	grx, gry := g.maingrid.XY()
 	input.GetInKB() //DEBUG USE
-	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d Cutoff:%d", g.SimSpeed, entity.CutoffIs())
+	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d Cut:%d Grid:%d,%d", g.SimSpeed, entity.CutoffIs(), grx, gry)
 }

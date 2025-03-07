@@ -1,0 +1,82 @@
+package core // import "github.com/iidexic/go-CA-experiments/core"
+
+
+VARIABLES
+
+var assignedKeys = []ebiten.Key{ebiten.KeyE,
+	ebiten.KeyG, ebiten.KeyR, ebiten.KeyQ,
+	ebiten.KeyD,
+	ebiten.KeyArrowDown, ebiten.KeyArrowUp,
+	ebiten.KeyArrowLeft, ebiten.KeyArrowRight,
+	ebiten.KeyEnter}
+
+FUNCTIONS
+
+func highlightcursor()
+func inputActions(g *GameSim)
+func makeSquare(width, height int) *entity.BaseEntity
+
+TYPES
+
+type GameSim struct {
+	maingrid                         *entity.GridEntity
+	pal                              []color.RGBA
+	gWidth, gHeight, pWidth, pHeight int
+	SimSpeed, modAdd, modMult, uTix  int
+	sqr                              *entity.BaseEntity
+	ticks                            uint16
+	rngen                            *gfx.QuickRNG
+}
+    GameSim struct - ebiten
+
+func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim
+    GameSimInit returns GameSim pointer for main sim scene with default settings
+
+func (g *GameSim) Draw(screen *ebiten.Image)
+    Draw screen
+
+func (g *GameSim) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int)
+    Layout of GameSim window (screen/GameSim)
+
+func (g *GameSim) Update() error
+    Update function
+
+func (g *GameSim) callKey(k ebiten.Key)
+
+func (g *GameSim) debugUpdate()
+
+func (g *GameSim) isSimTick() bool
+
+func (g *GameSim) presstime(kbKeys []ebiten.Key)
+
+func (g *GameSim) testSquarePosition()
+        func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
+        	return (width + tx) / 2, (height + ty) / 2 }
+
+type GameTest struct {
+	gWidth, gHeight int
+	pal             []color.RGBA
+	sqr             *entity.BaseEntity
+	cyc             cycler
+}
+    GameTest - test scene Game struct
+
+func GameTestInit(width, height int) *GameTest
+    GameTestInit function to initialize Game obj and start gameloops from main
+
+func (g *GameTest) Draw(screen *ebiten.Image)
+    Draw Game method
+
+func (g *GameTest) Layout(wWidth, wHeight int) (gameX, gameY int)
+    Layout Game method
+
+func (g *GameTest) Update() error
+    Update Game Method
+
+func (g *GameTest) debugUpdate()
+
+type cycler struct {
+	ticks, frames int
+}
+    cycler counts cycles to be sent to anywhere game timing is needed
+

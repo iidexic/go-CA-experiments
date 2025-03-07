@@ -23,7 +23,9 @@ var (
 )
 
 // ==================================
+func ecombo() {
 
+}
 func main() {
 	//^=====| INITIALIZATION IN MAIN |=====
 	s, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
@@ -34,9 +36,7 @@ func main() {
 	//--- temp above here ---
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowTitle("CA Experimentor")
-	//g := core.GameSimInit(GameWidth, GameHeight)
 	g := core.GameSimInit(GameWidth, GameHeight)
-	//^====================================
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}

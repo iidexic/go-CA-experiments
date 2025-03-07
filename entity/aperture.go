@@ -5,21 +5,23 @@ import (
 )
 
 // called in NewAperture
-func gridInAperture(width, height int) *GridEntity {
-	grid := GridEntity{
-		Img: ebiten.NewImage(width, height),
-		Op:  ebiten.DrawImageOptions{},
-		X:   uint(width), Y: uint(height), Area: width * height,
-		Px:     make([]byte, width*height*4),
-		modAdd: 1, modMult: 1, //>Currently Unused
+func initCellMatrix(width, height int) *cellMatrix {
+	cm := cellMatrix{
+		Area: width * height,
+		Px:   make([]byte, width*height*4),
 	}
-	return &grid
+	return &cm
+}
+
+type cellMatrix struct {
+	Area int
+	Px   []byte
 }
 
 // Aperture is the window to view the actual cell grid through.
 // allows zooming/panning
 type Aperture struct {
-	Grid        *GridEntity
+	CM          *cellMatrix
 	frame, view *ebiten.Image
 	gm          ebiten.GeoM
 	w, h        int
@@ -35,7 +37,7 @@ func NewAperture(width, height int, flags byte) *Aperture {
 	ap := Aperture{
 		w: width,
 		h: height, frameSizer: simplesizer,
-		Grid: gridInAperture(width, height),
+		CM: initCellMatrix(width, height),
 	}
 	ap.frameSizer(width, height, 0)
 	return &ap

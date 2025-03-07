@@ -27,6 +27,7 @@ type testmover struct {
 	r        image.Rectangle
 }
 
+/*
 func newTestMover() testmover {
 	mvr := testmover{moveType: zonestest, istep: 0}
 	s := simplmover{}
@@ -34,3 +35,4 @@ func newTestMover() testmover {
 	_ = s
 	return mvr
 }
+*/

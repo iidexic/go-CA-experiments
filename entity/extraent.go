@@ -56,9 +56,6 @@ func (grid *GridEntity) SimstepValueShift(pixLock bool) {
 	}
 }
 
-func (grid *GridEntity) applyResult(results []outcome, i int, iVS ...int) {
-
-}
 func shiftMod(start, add, mult int, limit int) int {
 	return wrap(((start + add) * mult), limit-3)
 }
@@ -79,20 +76,4 @@ func (grid *GridEntity) pxGoToward(indexR int, toPx []byte) {
 			grid.Px[indexR+i] += (toPx[i] - grid.Px[indexR+i]) / 2
 		}
 	}
-}
-func (grid *GridEntity) pxReplace(indexR int, new []byte) {
-	grid.Px[indexR] = new[0]
-	grid.Px[indexR+1] = new[1]
-	grid.Px[indexR+2] = new[2]
-}
-
-// pxTransplant overwrites 1px (3 indices) in grid.Px, starting at index
-// write uses values at indices R,G,B without changes made during the function call
-func (grid *GridEntity) pxTransplant(index int, R, G, B int) {
-	var nR byte = grid.Px[R]
-	var nG byte = grid.Px[G]
-	var nB byte = grid.Px[B]
-	grid.Px[index] = nR
-	grid.Px[index+1] = nG
-	grid.Px[index+2] = nB
 }
