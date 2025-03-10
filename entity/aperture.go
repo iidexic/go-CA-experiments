@@ -13,6 +13,19 @@ func initCellMatrix(width, height int) *cellMatrix {
 	return &cm
 }
 
+// --------------------------------------------------
+// UNUSED - well the whold file is.
+// ruleset/syscomponents intended pieces of new system, alongside aperture.
+// keep all parts separate and modular. ruleset to define buckets and logic
+// syscomponents struct originally intended to link pieces within the system
+type ruleset interface {
+	set(syscomponents)
+	step()
+}
+type syscomponents struct {
+}
+
+// --------------------------------------------------
 type cellMatrix struct {
 	Area int
 	Px   []byte

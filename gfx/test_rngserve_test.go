@@ -20,6 +20,30 @@ func TestHW(t *testing.T) {
 		fmt.Printf("#%d: tic is %s \n", wt, tnow)
 	}
 }
+func castCoinToss(i int) int {
+	tobyte := byte(i)
+	tosign := int8(tobyte)
+	return int(tosign)
+}
+func subtractCoinToss(i int) int {
+	tobyte := byte(i)
+	return int(tobyte) - 127
+}
+
+func benchmarkTossMethod(b *testing.B, fnTossInt func(int) int) {
+	var dump int = 0
+	for i := 0; i < b.N; i++ {
+		dump += fnTossInt(i)
+	}
+	_ = (dump)
+}
+
+// ==== the tests ====
+func BenchmarkTossSub(b *testing.B) { benchmarkTossMethod(b, subtractCoinToss) }
+
+func BenchmarkTossCast(b *testing.B) { benchmarkTossMethod(b, castCoinToss) }
+
+//===================
 
 func TestTimeout(t *testing.T) {
 
@@ -56,5 +80,6 @@ func TestGen(t *testing.T) {
 
 func catchTimeout(timeout *time.Timer, t *testing.T) {
 	<-timeout.C
-	t.Fatal("timeout")
+	panic(t)
+	//t.Fatal("timeout")
 }
