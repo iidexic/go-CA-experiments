@@ -94,7 +94,6 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 	screen.DrawImage(g.sqr.Img, g.sqr.Opt)
 
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 60, 0)
-
 }
 func (g *GameSim) isSimTick() bool {
 	return int(g.ticks)%(g.SimSpeed /*64-g.SimSpeed*/) == 0
@@ -110,7 +109,6 @@ func (g *GameSim) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
-	grx, gry := g.maingrid.XY()
 	input.GetInKB() //DEBUG USE
-	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d Cut:%d Grid:%d,%d", g.SimSpeed, entity.CutoffIs(), grx, gry)
+	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d Cut:%d Fails:%d", g.SimSpeed, entity.CutoffIs(), g.maingrid.Fails)
 }

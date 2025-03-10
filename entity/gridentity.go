@@ -7,16 +7,16 @@ import (
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	Img                   *ebiten.Image
-	X, Y                  uint
-	Bounds                []int
-	modAdd, modMult, Area int
-	Px, mem, Highlight    []byte
-	memsize               int
-	Op                    ebiten.DrawImageOptions
-	Draw, Debug           bool
-	pxsize                byte
-	qrng                  gfx.QuickRNG
+	Img                     *ebiten.Image
+	X, Y                    uint
+	Bounds                  []int
+	modAdd, modMult, Area   int
+	Px, mem, Highlight, rng []byte
+	memsize, Fails          int
+	Op                      ebiten.DrawImageOptions
+	Draw, Debug             bool
+	pxsize                  byte
+	reload                  func()
 }
 
 // this is a type alias:
@@ -39,15 +39,18 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 	width := (3 * gWidth) / 4
 	height := (3 * gHeight) / 4
 	grid := GridEntity{
+
 		Img:    ebiten.NewImage(width, height),
 		Bounds: make([]int, 4),
 		Op:     ebiten.DrawImageOptions{},
 		X:      uint(width), Y: uint(height), Area: width * height,
 		Px:     make([]byte, width*height*4),
+		rng:    make([]byte, 300),
 		modAdd: 0, modMult: 1, //> Unknown if needed
 		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
-		qrng:      gfx.GetQuickRNG(128),
+		pxsize:    1,
 	}
+	grid.reload = gfx.Fbytes(grid.rng)
 	grid.Bounds[0] = (gWidth - width) / 2
 	grid.Bounds[2] = grid.Bounds[0] + width
 
@@ -55,11 +58,8 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 	grid.Bounds[3] = grid.Bounds[1] + height
 	grid.Op.GeoM.Translate(float64(grid.Bounds[0]), float64(grid.Bounds[1]))
 	grid.Img.Fill(gfx.PaletteGP[gfx.Dark])
+
 	return &grid
-}
-func (grid *GridEntity) rng() byte {
-	go grid.qrng.ROPcheck()
-	return <-grid.qrng.C
 }
 
 // XY returns grid GeoM tx, ty screen location
@@ -74,10 +74,12 @@ func (grid *GridEntity) XY() (int, int) {
 		return <-grid.crng
 	}
 */
+func (grid *GridEntity) getrng(i int) byte {
+	return grid.rng[i%290]
+}
 func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 	i := ipx * 4
 	e := epx * 4
-	//removing all but win/lose to troubleshoot for now
 	switch o {
 	case ilose:
 		sliceToward(grid.Px[i:i+3], grid.Px[e:e+3], 150)
@@ -100,6 +102,7 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 		grid.Px[i+iMaxDiff] = grid.Px[e+iMaxDiff]
 		grid.Px[e+iMaxDiff] = dT
 	case imine:
+
 	case istale:
 		//grid.Px[i]
 	case ineut:
@@ -111,8 +114,9 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
-
-	for i := 0; i < grid.Area; i++ {
+	grid.reload() //roll rng
+	for i := range grid.Area {
+		irng := grid.getrng(i)
 		up := wrap(i-int(grid.X), grid.Area)
 		lft := sidewrap(i, -1, int(grid.X))
 		iR := i * 4
@@ -123,9 +127,9 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		uval := bavg(grid.Px[upR : upR+3]...)
 		lval := bavg(grid.Px[lftR : lftR+3]...)
 
-		results := versusLVSD(ival, uval, lval) // (currently) return slice of lightWin bools.
+		results := versusLVSD(irng, ival, uval, lval) // (currently) return slice of lightWin bools.
 		standinrng := uval ^ lval
-		if standinrng < 128 {
+		if standinrng > 127 {
 			grid.exec1v1(results[1], i, lft)
 			grid.exec1v1(results[0], i, up)
 		} else {
@@ -162,22 +166,21 @@ func sliceToward(from, to []byte, amount byte) {
 	}
 }
 
-func versusLVSD(iClr byte, versus ...byte) (versusResult []outcome) {
+func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
 	wout := make([]outcome, len(versus))
 
 	if iClr == 127 || iClr == 128 {
 		return wout
 	}
 	alignment := iClr > 128
-
+	//===TODO: No reason to go through conditionals here and then do a return and send that to another function to check the conditions again to find out what needs to be ran.
 	for i, v := range versus {
-
 		if v == 127 || v == 128 { // mine (future functionality) if v neutral
 			wout[i] = imine
 		} else if (v > 128) == alignment { // if vs alignment == mc alignment
 			wout[i] = ifriend
 		} else { // the actual battle
-			rval := battlemc(iClr, v, testCutoff)
+			rval := battlemc(iClr, v, (testCutoff + rng))
 			switch {
 			case rval > 0:
 				wout[i] = iwin
@@ -212,21 +215,28 @@ func (grid *GridEntity) DebugOverlay() []byte {
 		avgC := bavg(grid.Px[icol : icol+3]...)
 		if avgC == 127 || avgC == 128 { //Neutral
 
+			//sliceToward(overlay[icol:icol+4], grid.Highlight[:4], 128)
 			overlay[icol] = 127
 			overlay[icol+1] = 127
 			overlay[icol+2] = 127
 			overlay[icol+3] = 40 //alpha
 
 		} else if avgC > 128 { // light = red?
+			//sliceToward(overlay[icol:icol+4], grid.Highlight[4:8], 128)
+
 			overlay[icol] = 255
 			overlay[icol+1] = 20
 			overlay[icol+2] = 20
 			overlay[icol+3] = 40 //alpha
+
 		} else { // dark = blue
+			//sliceToward(overlay[icol:icol+4], grid.Highlight[8:], 128)
+
 			overlay[icol] = 20
 			overlay[icol+1] = 20
 			overlay[icol+2] = 120
 			overlay[icol+3] = 10 //alpha
+
 		}
 	}
 	return overlay

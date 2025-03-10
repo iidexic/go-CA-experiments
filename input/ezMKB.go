@@ -11,6 +11,7 @@ import (
 type EZmouse struct {
 	cX, cY                int
 	lmb, rmb, mmb, m4, m5 int
+	hl                    ebiten.Image
 }
 
 // MBState refreshes state of mouse buttons
@@ -26,14 +27,19 @@ func (m *EZmouse) MBState() {
 var m EZmouse
 
 // Mouse returns EZmouse obj
-func Mouse() EZmouse {
-	return m
+func Mouse() *EZmouse {
+	return &m
+}
+
+// XY returns last-recorded coordinates of mouse cursor
+func (m *EZmouse) XY() (int, int) {
+	return m.cX, m.cY
 }
 
 // CursOn intakes a list of rectangles indicating
 func (m *EZmouse) CursOn(bounds []int) int {
-	cX, cY := ebiten.CursorPosition()
-	if bounds[0] <= cX && cX <= bounds[2] && bounds[1] <= cY && cY <= bounds[3] {
+	m.cX, m.cY = ebiten.CursorPosition()
+	if bounds[0] <= m.cX && m.cX <= bounds[2] && bounds[1] <= m.cY && m.cY <= bounds[3] {
 		return 1
 	}
 	return 0

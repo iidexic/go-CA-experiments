@@ -31,12 +31,15 @@ func inputActions(g *GameSim) {
 	g.presstime(assignedKeys)
 }
 
-func highlightcursor(m input.EZmouse) {
-	if m.CursOn([]int{0, 0, 480, 240}) > 0 {
+/*
+	func highlightcursor(m input.EZmouse, effectBounds []int) ebiten.Image {
+		if m.CursOn(effectBounds) > 0 {
+			IMG:=ebiten.NewImage(12,12)
+			IMG.Fill(color.RGBA{60,50,10,60})
 
+		}
 	}
-}
-
+*/
 func (g *GameSim) presstime(kbKeys []ebiten.Key) {
 	for _, key := range kbKeys {
 		//= repeat behavior
