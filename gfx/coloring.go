@@ -5,7 +5,6 @@ import (
 
 	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/iidexic/go-CA-experiments/util"
 )
 
 // Gradientbytes makes a gradient from color c1 to color c2 in number of steps
@@ -55,10 +54,12 @@ func Gradientbytes(c1 []byte, c2 []byte, steps uint8) []byte {
 func Randpx(pxcount uint) []byte {
 	b := make([]byte, pxcount*4)
 	_, err := fastrand.Read(b)
+	if err != nil {
+		panic(err)
+	}
 	for i := 3; i < len(b); i += 4 {
 		b[i] = 255
 	}
-	util.CheckPants(err)
 	return b
 }
 
@@ -139,6 +140,37 @@ const (
 
 // PaletteGP holds Gummy Pickles pallete for use throughout
 var PaletteGP []color.RGBA = []color.RGBA{
+	// Gummy-Pickles (24-color)
+	{199, 175, 66, 255},  //yellow
+	{165, 132, 73, 255},  //Tan mid (slight grn)
+	{73, 106, 75, 255},   //Green
+	{54, 73, 98, 255},    //GrayDark (muted blue)
+	{99, 121, 140, 255},  //GrayMid
+	{179, 197, 194, 255}, //GrayLight
+	{239, 236, 232, 255}, //White
+	{216, 163, 220, 255}, //LightPink
+	{212, 98, 158, 255},  //Pink
+	{133, 57, 91, 255},   //Maroon
+	{206, 82, 99, 255},   //Salmon
+	{241, 142, 116, 255}, //Peach
+	{211, 147, 84, 255},  //MustardYlw
+	{199, 102, 82, 255},  //DarkOrng
+	{164, 72, 87, 255},   //MidRed
+	{154, 92, 76, 255},   //Brown
+	{120, 76, 173, 255},  //Lilac
+	{229, 136, 82, 255},  //Orang
+	{254, 204, 128, 255}, //LightOrange
+	{142, 163, 230, 255}, //CornflowerBlue
+	{58, 113, 166, 255},  //SeaBlue
+	{75, 58, 166, 255},   //BluPurp
+	{53, 41, 89, 255},    //DeepPurp
+	{6, 13, 35, 255},     //Dark
+}
+
+// BPaletteGP is byte slice version of palette
+// used when colors are needed to pull directly into pixel data
+var BPaletteGP [][]byte = [][]byte{
+	// BSPalette has an un-exported thingy
 	// Gummy-Pickles (24-color)
 	{199, 175, 66, 255},  //yellow
 	{165, 132, 73, 255},  //Tan mid (slight grn)

@@ -72,6 +72,40 @@ func bavg(b ...byte) (avg byte) {
 	return byte(rval / len(b))
 }
 
+// absolute center difference byte average.
+func acdbavg(b ...byte) byte {
+	tot := 0
+	for _, v := range b {
+		tot += int(v) - 127
+	}
+	a := tot / len(b)
+	if a < 0 {
+		a = -a
+	}
+	return byte(a)
+}
+
+// byte slice limit add (probably should combine with bslsub)
+func bsladd(b []byte, add byte) {
+	for i := range b {
+		if b[i]+add < b[i] {
+			b[i] = 255
+		} else {
+			b[i] += add
+		}
+	}
+}
+
+func bslsub(b []byte, subtract byte) {
+	for i := range b {
+		if b[i]-subtract > b[i] {
+			b[i] = 0
+		} else {
+			b[i] -= subtract
+		}
+	}
+}
+
 // Erch check error do checking
 func Erch(e error) {
 	if e != nil {

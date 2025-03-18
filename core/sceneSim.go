@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -19,7 +18,6 @@ type GameSim struct {
 	pal                              []color.RGBA
 	gWidth, gHeight, pWidth, pHeight int
 	SimSpeed, modAdd, modMult, uTix  int
-	sqr                              *entity.BaseEntity
 	ticks                            uint16
 }
 
@@ -36,30 +34,8 @@ func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	}
 	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight)
 	//==== TESTING STUFF ====
-	g.sqr = makeSquare(16, 16)
 	//=======================
 	return g
-}
-
-func makeSquare(width, height int) *entity.BaseEntity {
-	sq := entity.NewBaseEntity(width, height)
-
-	sq.Img.Fill(color.RGBA{255, 40, 230, 255})
-	//sq.GeoM.Scale(1.1, 1.1)
-	sq.GeoM.Translate(20, 20)
-	return sq
-}
-
-//unused, remove
-
-//	func centr(width float64, height float64, tx float64, ty float64) (float64, float64) {
-//		return (width + tx) / 2, (height + ty) / 2 }
-func (g *GameSim) testSquarePosition() {
-	//** to do not corner rotation, shift - 1/2 of bounds xy, then shift back.
-	w, h := g.sqr.Img.Bounds().Dx(), g.sqr.Img.Bounds().Dy() //grab bounds
-	g.sqr.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)   //center the origin
-	g.sqr.GeoM.Rotate(float64(1) / 96.0 * math.Pi / 6)       // perform rotate.
-	g.sqr.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)     //put back to proper location
 }
 
 // Update function
@@ -70,7 +46,7 @@ func (g *GameSim) Update() error {
 		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
 		if g.maingrid.Debug {
-			g.maingrid.Img.WritePixels(g.maingrid.DebugOverlay())
+			g.maingrid.Img.WritePixels(g.maingrid.ApplyDbgOverlay(0))
 		} else {
 			g.maingrid.Img.WritePixels(g.maingrid.Px)
 		}
@@ -88,10 +64,6 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 	if g.maingrid.Draw {
 		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
 	}
-	g.testSquarePosition()
-
-	//== test sqr draw
-	screen.DrawImage(g.sqr.Img, g.sqr.Opt)
 
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 60, 0)
 }
@@ -110,5 +82,7 @@ func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
 	input.GetInKB() //DEBUG USE
-	util.Dbg.UpdateDetail = fmt.Sprintf("||SPD:%d Cut:%d Fails:%d", g.SimSpeed, entity.CutoffIs(), g.maingrid.Fails)
+	util.Dbg.UpdateDetail = fmt.Sprintf(
+		"||SPD:%d Cut:%d",
+		g.SimSpeed, entity.CutoffIs())
 }

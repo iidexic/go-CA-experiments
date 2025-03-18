@@ -25,6 +25,15 @@ type cycler struct {
 	ticks, frames int
 }
 
+func makeSquare(width, height int) *entity.BaseEntity {
+	sq := entity.NewBaseEntity(width, height)
+
+	sq.Img.Fill(color.RGBA{255, 40, 230, 255})
+	//sq.GeoM.Scale(1.1, 1.1)
+	sq.GeoM.Translate(20, 20)
+	return sq
+}
+
 // GameTestInit function to initialize Game obj and start gameloops from main
 func GameTestInit(width, height int) *GameTest {
 	g := &GameTest{
