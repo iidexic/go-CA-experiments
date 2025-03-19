@@ -73,7 +73,7 @@ func bavg(b ...byte) (avg byte) {
 }
 
 // absolute center difference byte average.
-func acdbavg(b ...byte) byte {
+func acdbavg(b ...byte) byte { //TODO: REWRITE - Can't tell if even functioning as intended
 	tot := 0
 	for _, v := range b {
 		tot += int(v) - 127
@@ -88,7 +88,7 @@ func acdbavg(b ...byte) byte {
 // byte slice limit add (probably should combine with bslsub)
 func bsladd(b []byte, add byte) {
 	for i := range b {
-		if b[i]+add < b[i] {
+		if add > 255-b[i] {
 			b[i] = 255
 		} else {
 			b[i] += add
@@ -98,7 +98,7 @@ func bsladd(b []byte, add byte) {
 
 func bslsub(b []byte, subtract byte) {
 	for i := range b {
-		if b[i]-subtract > b[i] {
+		if b[i] < subtract {
 			b[i] = 0
 		} else {
 			b[i] -= subtract

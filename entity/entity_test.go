@@ -54,13 +54,13 @@ func TestSort(t *testing.T) {
 	}
 	fmt.Println("test end")
 }
-func TestFakeAlpha(t *testing.T) {
+func TestMto(t *testing.T) {
 	in1 := [][]byte{{255, 128, 200, 0}}
 	in2 := [][]byte{{33, 230, 180, 255}}
 	expected := [][]byte{{33, 230, 180, 255}}
 	tempresult := make([]byte, 4)
 	for i := range in1 {
-		fakeAlpha(in1[i], in2[i], tempresult)
+		mto(in1[i], in2[i], tempresult)
 		if !slices.Equal(tempresult, expected[i]) {
 			fmt.Println("expected vs actual ->", expected[i], "vs", tempresult)
 			t.Fail()

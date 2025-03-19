@@ -15,6 +15,7 @@ type GridEntity struct {
 	Op                    ebiten.DrawImageOptions
 	Draw, Debug           bool
 	reload                func()
+	DebugString           string
 }
 
 var testCutoff byte = 128
@@ -31,7 +32,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		Op:     ebiten.DrawImageOptions{},
 		X:      uint(width), Y: uint(height), Area: width * height,
 		Px:     make([]byte, width*height*4),
-		rng:    make([]byte, 300),
+		rng:    make([]byte, width*height),
 		modAdd: 0, modMult: 1, //> Unknown if needed
 		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
 	}
@@ -46,6 +47,12 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 
 	return &grid
 }
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//****************************************************************************
+//****************************************************************************
+
 func pxisort(pix []byte) []int {
 	ts := make([]int, 3)
 	if pix[0] > pix[1] {
@@ -75,7 +82,7 @@ func (grid *GridEntity) XY() (int, int) {
 	return int(grid.Op.GeoM.Element(0, 2)), int(grid.Op.GeoM.Element(1, 2))
 }
 
-func (grid *GridEntity) getrng(i int) byte { return grid.rng[i%290] }
+func (grid *GridEntity) getrng(i int) byte { return grid.rng[i%grid.Area] }
 
 // this is a type alias:
 type outcome = int
@@ -137,69 +144,6 @@ func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 		}
 	}
 }
-func (grid *GridEntity) interactMine(i, m int) {
-
-}
-func (grid *GridEntity) interactNeutral(i, e int) {
-
-}
-func (grid *GridEntity) interactStalemate(i, e int) {
-
-}
-func (grid *GridEntity) interactFriend(i, e int) {
-	//! untested
-	ip := grid.Px[i : i+3]
-	ep := grid.Px[e : e+3]
-
-	ipavg := acdbavg(ip...)
-	epavg := acdbavg(ep...)
-
-	alignment := ipavg > 128
-	if ipavg > epavg {
-		sliceToward(ip, ep, 64)
-	} else if epavg > ipavg {
-		sliceToward(ep, ip, 64)
-	} else { //? possibly add a re-ordering of RGB values to match i's
-		if alignment {
-			bsladd(ip, 1)
-		} else {
-			bslsub(ip, 1)
-		}
-	}
-}
-
-func moveToward(from, to byte, amount byte) byte {
-
-	var dfin int
-	dist := int(to) - int(from) //*=0 to 255
-
-	if dist < 0 {
-		dist = -dist
-	}
-	dmult := dist * int(amount)
-	if dmult >= 255 {
-		dfin = dmult / 255
-	} else {
-		dfin = dist
-	}
-	return from + byte(dfin)
-}
-func realmoveToward(from, to byte, amount byte) byte {
-	dist := int(to) - int(from)
-	dx := (dist * int(amount)) / 255
-	return byte(int(from) + dx)
-	// max |dx| == |dist|
-}
-
-// given two slices, moves one toward the other, specified by byte
-// to will loop if from larger than to
-func sliceToward(from, to []byte, amount byte) {
-	lto := len(to)
-	for i := range from {
-		from[i] = moveToward(from[i], to[i%lto], amount)
-	}
-}
-
 func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
 	wout := make([]outcome, len(versus))
 
@@ -241,10 +185,134 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 	return mcWin
 }
 
+func (grid *GridEntity) interactMine(i, m int) {
+	ip := grid.Px[i : i+4]
+	ival := bavg(ip[:3]...) //TODO: prevent needing to calc multiple times per pixel per frame
+	light := ival > 128
+	mp := grid.Px[m : m+4]
+	s := pxisort(mp[:3])
+	//[Mine Behavior]
+	//- For the pixel being mined (m); each byte val is resource.
+	//- 3-color is most energy/hardest to mine
+	//- going down to 1-color,  easiest to mine
+	if light {
+		mineLV1 := mp[s[2]] - mp[s[1]]
+		mineLV2 := mp[s[1]] - mp[s[0]]
+		switch {
+		case mineLV1 > 15:
+			mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 16)
+		case mineLV2 > 3:
+			mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 4)
+			mp[s[1]], ip[s[1]] = bmov(mp[s[1]], ip[s[1]], 4)
+		default:
+			bsladd(ip[:3], 1)
+			bslsub(mp[:3], 1)
+		}
+	} else {
+		mineLV1 := (255 - mp[s[0]]) - (255 - mp[s[1]])
+		mineLV2 := (255 - mp[s[1]]) - (255 - mp[s[2]])
+		switch {
+		case mineLV1 > 15:
+			ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 16)
+		case mineLV2 > 3:
+			ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 4)
+			ip[s[1]], mp[s[1]] = bmov(ip[s[1]], mp[s[1]], 4)
+		default:
+			bsladd(mp[:3], 1)
+			bslsub(ip[:3], 1)
+		}
+	}
+}
+
+func bmov(src, dest byte, amt byte) (byte, byte) {
+	lim := min(src, 255-dest, amt)
+	src -= lim
+	dest += lim
+	return src, dest
+}
+func (grid *GridEntity) interactNeutral(i, e int) {
+
+}
+func (grid *GridEntity) interactStalemate(i, e int) { //! FIX CRASH :)
+	ipx := grid.Px[i : i+4]
+	epx := grid.Px[e : e+4]
+	srng := int(grid.getrng(i+2)) + int(grid.getrng(i+1))
+	xtrarng := grid.getrng(i + 666)
+	if xtrarng > 252 { //makes colored noise, lower the threshold = more noise
+		//do the XOR
+		for n := range ipx {
+			ipx[(srng*e+n)%3] ^= epx[(srng*i+n)%3]
+			epx[(srng*i+n)%3] ^= ipx[(srng*e+2+n)%3]
+		}
+	} else if bavg(ipx[:3]...) > 128 {
+		bsladd(ipx[:3], 16)
+		bslsub(epx[:3], 16)
+	} else if bavg(ipx[:3]...) < 127 {
+		bsladd(epx[:3], 16)
+		bslsub(ipx[:3], 16)
+	}
+}
+func (grid *GridEntity) interactFriend(i, e int) {
+	//! untested
+	ip := grid.Px[i : i+3]
+	ep := grid.Px[e : e+3]
+
+	ipavg := acdbavg(ip...) //TODO: rewrite
+	epavg := acdbavg(ep...)
+
+	alignment := bavg(ip...) > 128
+	if ipavg > epavg {
+		sliceToward(ip, ep, 64)
+	} else if epavg > ipavg {
+		sliceToward(ep, ip, 64)
+	} else { //? possibly add a re-ordering of RGB values to match i's
+		si := pxisort(ip)
+		se := pxisort(ep)
+		if alignment {
+			if ip[si[2]] > ep[se[2]] {
+				temp := ep[si[2]]
+				ep[si[2]] = ep[se[2]]
+				ep[se[2]] = temp
+			} else {
+				temp := ip[se[2]]
+				ip[se[2]] = ip[si[2]]
+				ip[si[2]] = temp
+			}
+			//bsladd(ip, 128) //bsladd(ep, 128)
+		} else {
+			if ip[si[0]] < ip[se[0]] {
+				temp := ep[si[0]]
+				ep[si[0]] = ep[se[0]]
+				ep[se[0]] = temp
+			} else {
+				temp := ip[se[0]]
+				ip[se[0]] = ip[si[0]]
+				ip[si[0]] = temp
+			}
+			//bslsub(ip, 128) //bslsub(ep, 128)
+		}
+	}
+}
+func moveToward(from, to byte, amount byte) byte {
+	dist := int(to) - int(from)
+	dx := (dist * int(amount)) / 255
+	return byte(int(from) + dx)
+	// max |dx| == |dist|
+}
+
+// given two slices, moves one toward the other, specified by byte
+// to will loop if from larger than to
+func sliceToward(from, to []byte, amount byte) {
+	lto := len(to)
+	for i := range from {
+		from[i] = moveToward(from[i], to[i%lto], amount)
+	}
+}
+
 var (
-	overlayRed  []byte = []byte{255, 90, 90, 140}
-	overlayBlue        = []byte{0, 0, 0, 240}
-	overlayMid         = []byte{40, 44, 40, 240}
+	overlayRed  []byte = []byte{240, 100, 100, 120}
+	overlayBlue        = []byte{0, 0, 180, 140}
+	overlayMid         = []byte{100, 129, 100, 205}
 )
 
 // ApplyDbgOverlay does that.
@@ -266,65 +334,27 @@ func (grid *GridEntity) ApplyDbgOverlay(mode int) []byte {
 	return overlay
 }
 
-// DebugOverlay dispays colors based on the current state of pixels.
-func (grid *GridEntity) DebugOverlay() []byte {
-	overlay := make([]byte, len(grid.Px))
-	for i := range grid.Area {
-		icol := i * 4
-		avgC := bavg(grid.Px[icol : icol+3]...)
-		if avgC == 127 || avgC == 128 { //Neutral
-			//sliceToward(overlay[icol:icol+4], grid.Highlight[:4], 128)
-			overlay[icol] = 127
-			overlay[icol+1] = 127
-			overlay[icol+2] = 127
-			overlay[icol+3] = 40 //alpha
-
-		} else if avgC > 128 { // light = red?
-			//sliceToward(overlay[icol:icol+4], grid.Highlight[4:8], 128)
-			overlay[icol] = 255
-			overlay[icol+1] = 20
-			overlay[icol+2] = 20
-			overlay[icol+3] = 40 //alpha
-
-		} else { // dark = blue
-			//sliceToward(overlay[icol:icol+4], grid.Highlight[8:], 128)
-
-			overlay[icol] = 12
-			overlay[icol+1] = 12
-			overlay[icol+2] = 150
-			overlay[icol+3] = 10 //alpha
-
-		}
-	}
-	return overlay
-}
-
-// i: for use in Debug Overlay
-func fakeAlpha(pxtop, px2, dest []byte) {
-	var alphadiv int = 0
-	if pxtop[3] == 0 {
-		dest = px2
-		return
-	}
-	for i := range dest[:3] {
-		alphadiv = int(255 / pxtop[3])
-		o := (int(pxtop[i]) - 127) / alphadiv
-		o += int(px2[i])
-		if o > 255 {
-			dest[i] = 255
-		} else if o < 0 {
-			dest[i] = 0
-		} else {
-			dest[i] = byte(o)
-		}
-	}
-	dest[3] = 255
-}
 func mto(bs1, bs2, dest []byte) {
 	for i := range dest[:3] {
 		dest[i] = moveToward(bs1[i], bs2[i], bs2[3])
 	}
 	dest[3] = 255
+}
+
+// moves color from one px to another.
+// * up==true will move color from px1 to px2 and vice versa
+func cmov(px1, px2 []byte, up bool, amt ...byte) {
+	for i, a := range amt {
+		if up {
+			lim := min(px1[i], 255-px2[i], a)
+			px1[i] -= lim
+			px2[i] += lim
+		} else {
+			lim := min(px2[i], 255-px1[i], a)
+			px1[i] += lim
+			px2[i] -= lim
+		}
+	}
 }
 
 // CutoffUp is to manually change victory cutoff to see effects in real-time

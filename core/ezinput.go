@@ -84,11 +84,11 @@ func (g *GameSim) callKey(k ebiten.Key) {
 	case ebiten.KeyArrowDown:
 		if 1 < g.SimSpeed && g.SimSpeed < 12 {
 			g.SimSpeed--
-		} else if g.SimSpeed < 24 {
+		} else if g.SimSpeed < 20 {
 			g.SimSpeed -= 2
-		} else if g.SimSpeed < 36 {
+		} else if g.SimSpeed < 40 {
 			g.SimSpeed -= 4
-		} else if g.SimSpeed >= 56 {
+		} else {
 			g.SimSpeed -= 8
 		}
 
