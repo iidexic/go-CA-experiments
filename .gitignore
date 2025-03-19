@@ -1,3 +1,6 @@
 .external/goplayground.go
 .external/
 .extras/
+.vscode/
+tmp/
+extras/
