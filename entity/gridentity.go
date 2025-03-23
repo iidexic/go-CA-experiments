@@ -7,15 +7,15 @@ import (
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	Img                   *ebiten.Image
-	X, Y                  uint
-	Bounds                []int
-	modAdd, modMult, Area int
-	Px, Highlight, rng    []byte
-	Op                    ebiten.DrawImageOptions
-	Draw, Debug           bool
-	reload                func()
-	DebugString           string
+	Img                            *ebiten.Image
+	X, Y                           uint
+	Bounds                         []int
+	modAdd, modMult, Area          int
+	Px, Highlight, face, stun, rng []byte
+	Op                             ebiten.DrawImageOptions
+	Draw, Debug                    bool
+	reload                         func()
+	DebugString                    string
 }
 
 var testCutoff byte = 128
@@ -95,6 +95,7 @@ const (
 	istale
 	ifriend
 	imine
+	istun
 )
 
 func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
@@ -184,42 +185,46 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 	}
 	return mcWin
 }
+func (grid *GridEntity) interactWin(i, e int, bpercent byte){
 
+}
 func (grid *GridEntity) interactMine(i, m int) {
-	ip := grid.Px[i : i+4]
-	ival := bavg(ip[:3]...) //TODO: prevent needing to calc multiple times per pixel per frame
-	light := ival > 128
-	mp := grid.Px[m : m+4]
-	s := pxisort(mp[:3])
-	//[Mine Behavior]
-	//- For the pixel being mined (m); each byte val is resource.
-	//- 3-color is most energy/hardest to mine
-	//- going down to 1-color,  easiest to mine
-	if light {
-		mineLV1 := mp[s[2]] - mp[s[1]]
-		mineLV2 := mp[s[1]] - mp[s[0]]
-		switch {
-		case mineLV1 > 15:
-			mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 16)
-		case mineLV2 > 3:
-			mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 4)
-			mp[s[1]], ip[s[1]] = bmov(mp[s[1]], ip[s[1]], 4)
-		default:
-			bsladd(ip[:3], 1)
-			bslsub(mp[:3], 1)
-		}
-	} else {
-		mineLV1 := (255 - mp[s[0]]) - (255 - mp[s[1]])
-		mineLV2 := (255 - mp[s[1]]) - (255 - mp[s[2]])
-		switch {
-		case mineLV1 > 15:
-			ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 16)
-		case mineLV2 > 3:
-			ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 4)
-			ip[s[1]], mp[s[1]] = bmov(ip[s[1]], mp[s[1]], 4)
-		default:
-			bsladd(mp[:3], 1)
-			bslsub(ip[:3], 1)
+	if grid.getrng(i)%10 < 3 {
+		ip := grid.Px[i : i+4]
+		ival := bavg(ip[:3]...) //TODO: prevent needing to calc multiple times per pixel per frame
+		light := ival > 128
+		mp := grid.Px[m : m+4]
+		s := pxisort(mp[:3])
+		//---[Mine Behavior]
+		//- Each value (light-> colorval | dark-> empty colorval)
+		//- 3-color is most energy/hardest to mine
+		//- going down to 1-color,  easiest to mine
+		if light {
+			mineLV1 := mp[s[2]] - mp[s[1]]
+			mineLV2 := mp[s[1]] - mp[s[0]]
+			switch {
+			case mineLV1 > 15:
+				mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 16)
+			case mineLV2 > 3:
+				mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 4)
+				mp[s[1]], ip[s[1]] = bmov(mp[s[1]], ip[s[1]], 4)
+			default:
+				bsladd(ip[:3], 2)
+				bslsub(mp[:3], 2)
+			}
+		} else {
+			mineLV1 := (255 - mp[s[0]]) - (255 - mp[s[1]])
+			mineLV2 := (255 - mp[s[1]]) - (255 - mp[s[2]])
+			switch {
+			case mineLV1 > 15:
+				ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 16)
+			case mineLV2 > 3:
+				ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 4)
+				ip[s[1]], mp[s[1]] = bmov(ip[s[1]], mp[s[1]], 4)
+			default:
+				bsladd(mp[:3], 2)
+				bslsub(ip[:3], 2)
+			}
 		}
 	}
 }
@@ -231,9 +236,28 @@ func bmov(src, dest byte, amt byte) (byte, byte) {
 	return src, dest
 }
 func (grid *GridEntity) interactNeutral(i, e int) {
-
+	/*
+		rng := grid.getrng(i)
+		if rng < 3 {
+			rd3 := rng / 3
+			r1m3 := (rng + (rd3 % 2)) % 3
+			r2m3 := (rng + 2) % 3
+			ip := grid.Px[i : i+3]
+			ip[r1m3], ip[rng] = bmov(ip[r1m3], ip[rng], ip[r1m3])
+			ip[r2m3], ip[rng] = bmov(ip[r2m3], ip[rng], ip[r2m3])
+		}
+	*/
 }
-func (grid *GridEntity) interactStalemate(i, e int) { //! FIX CRASH :)
+func pxswap(px1, px2 []byte) {
+	tR := px1[0]
+	tG := px1[1]
+	tB := px1[2]
+	px1 = px2
+	px2[0] = tR
+	px2[1] = tG
+	px2[2] = tB
+}
+func (grid *GridEntity) interactStalemate(i, e int) {
 	ipx := grid.Px[i : i+4]
 	epx := grid.Px[e : e+4]
 	srng := int(grid.getrng(i+2)) + int(grid.getrng(i+1))
@@ -257,7 +281,7 @@ func (grid *GridEntity) interactFriend(i, e int) {
 	ip := grid.Px[i : i+3]
 	ep := grid.Px[e : e+3]
 
-	ipavg := acdbavg(ip...) //TODO: rewrite
+	ipavg := acdbavg(ip...) 
 	epavg := acdbavg(ep...)
 
 	alignment := bavg(ip...) > 128
@@ -278,7 +302,8 @@ func (grid *GridEntity) interactFriend(i, e int) {
 				ip[se[2]] = ip[si[2]]
 				ip[si[2]] = temp
 			}
-			//bsladd(ip, 128) //bsladd(ep, 128)
+			bsladd(ip, 6)
+			bsladd(ep, 6)
 		} else {
 			if ip[si[0]] < ip[se[0]] {
 				temp := ep[si[0]]
@@ -289,7 +314,8 @@ func (grid *GridEntity) interactFriend(i, e int) {
 				ip[se[0]] = ip[si[0]]
 				ip[si[0]] = temp
 			}
-			//bslsub(ip, 128) //bslsub(ep, 128)
+			bslsub(ip, 6)
+			bslsub(ep, 6)
 		}
 	}
 }
@@ -303,6 +329,7 @@ func moveToward(from, to byte, amount byte) byte {
 // given two slices, moves one toward the other, specified by byte
 // to will loop if from larger than to
 func sliceToward(from, to []byte, amount byte) {
+
 	lto := len(to)
 	for i := range from {
 		from[i] = moveToward(from[i], to[i%lto], amount)
@@ -310,9 +337,9 @@ func sliceToward(from, to []byte, amount byte) {
 }
 
 var (
-	overlayRed  []byte = []byte{240, 100, 100, 120}
-	overlayBlue        = []byte{0, 0, 180, 140}
-	overlayMid         = []byte{100, 129, 100, 205}
+	overlayRed  []byte = []byte{240, 100, 100, 60}
+	overlayBlue        = []byte{0, 0, 180, 60}
+	overlayMid         = []byte{100, 129, 100, 105}
 )
 
 // ApplyDbgOverlay does that.
@@ -334,7 +361,7 @@ func (grid *GridEntity) ApplyDbgOverlay(mode int) []byte {
 	return overlay
 }
 
-func mto(bs1, bs2, dest []byte) {
+func mto(bs1, bs2, dest []byte) { //^ what
 	for i := range dest[:3] {
 		dest[i] = moveToward(bs1[i], bs2[i], bs2[3])
 	}

@@ -19,12 +19,13 @@ type GameSim struct {
 	gWidth, gHeight, pWidth, pHeight int
 	SimSpeed, modAdd, modMult, uTix  int
 	ticks                            uint16
+	devFASTSTART                     bool
 }
 
 // GameSimInit returns GameSim pointer for main sim scene with default settings
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	g := &GameSim{
-		SimSpeed: -4,
+		SimSpeed: 2,
 		modAdd:   1,
 		modMult:  4,
 		gWidth:   GameSimWidth,
@@ -34,6 +35,7 @@ func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	}
 	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight)
 	//==== TESTING STUFF ====
+	g.devFASTSTART = true
 	//=======================
 	return g
 }
@@ -42,6 +44,10 @@ func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 func (g *GameSim) Update() error {
 	g.debugUpdate()
 	g.ticks++
+	if g.devFASTSTART {
+		g.devFASTSTART = false
+		g.fastInitializeDev()
+	}
 	if g.SimSpeed > 0 && g.isSimTick() {
 		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
@@ -65,7 +71,7 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
 	}
 
-	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, 60, 0)
+	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, g.gWidth/16, 0)
 }
 func (g *GameSim) isSimTick() bool {
 	return int(g.ticks)%(g.SimSpeed /*64-g.SimSpeed*/) == 0

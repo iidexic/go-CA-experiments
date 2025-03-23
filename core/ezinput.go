@@ -49,6 +49,10 @@ func (g *GameSim) presstime(kbKeys []ebiten.Key) {
 		}
 	}
 }
+func (g *GameSim) fastInitializeDev() {
+	g.callKey(ebiten.KeyG)
+	g.callKey(ebiten.KeyR)
+}
 func (g *GameSim) callKey(k ebiten.Key) {
 	switch k {
 	case ebiten.KeyG:

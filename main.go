@@ -9,11 +9,11 @@ import (
 
 // globals and Structs
 // ==================================
-var (
-	PixWidth    int  = 1280
-	PixHeight   int  = 720
-	GameWidth   int  = 480 //16 (960)
-	GameHeight  int  = 270 //9 (540)
+var ( //16 by 9: 1920x1080, 960x540
+	PixWidth    int  = 640
+	PixHeight   int  = 1000
+	GameWidth   int  = 320
+	GameHeight  int  = 500
 	tick, frame uint = 0, 0
 	layoutCount int  = 0
 )
@@ -24,6 +24,7 @@ func main() {
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("CA Experimentor")
+	ebiten.SetWindowPosition(0, 80)
 	g := core.GameSimInit(GameWidth, GameHeight)
 	//>----/ launch game loop /----<//
 	if err := ebiten.RunGame(g); err != nil {
