@@ -6,39 +6,23 @@ import (
 	"testing"
 )
 
-// TestSidewrap does that
 func TestSidewrap(t *testing.T) {
-	/*
-	   [0,1,2,3
-	    4,5,6,7
-	    8,9,A,B
-	    C,D,E,F]
-	*/
-	// out1: 10x10, i = 10, move = -1, width = 10 | out1->19
 	out1 := sidewrap(10, -1, 10)
-	// out2: 768x512, i=158976 (0 on row 207), move = -780, width = 768,
-	// out2->159732
 	out2 := sidewrap(158976, -780, 768)
-	// out3:128x128,, i=255(last on row 2), move=1, width=128 | out3->128
 	out3 := sidewrap(255, 1, 128)
-	//out4: 128x test 0 <- left | out4=127
 	out4 := sidewrap(0, -1, 128)
-	//out5: 128x test max +513 | out5= 16256? wait on this
-
-	if out1 != 19 {
-		fmt.Printf("out1 = %d, should be 19\n", out1)
+	switch {
+	case out1 != 19:
+		t.Logf("out1=%d, should be 19\n", out1)
 		t.Fail()
-	}
-	if out2 != 159732 {
-		fmt.Printf("out1 = %d, should be 159732\n", out2)
+	case out2 != 159732:
+		t.Logf("out1 = %d, should be 159732\n", out2)
 		t.Fail()
-	}
-	if out3 != 128 {
-		fmt.Printf("out3 = %d, should be 128\n", out3)
+	case out3 != 128:
+		t.Logf("out3 = %d, should be 128\n", out3)
 		t.Fail()
-	}
-	if out4 != 127 {
-		fmt.Printf("out4 = %d, should be 127\n", out4)
+	case out4 != 127:
+		t.Logf("out4 = %d, should be 127\n", out4)
 		t.Fail()
 	}
 }
@@ -48,7 +32,7 @@ func TestSort(t *testing.T) {
 	for i := range 6 {
 		out := pxisort(vals[i])
 		if !slices.Equal(out, result[i]) {
-			fmt.Println("out:", out, "len=", len(out), "\nresult:", result[i], "len=", len(result[i]))
+			t.Log("out:", out, "len=", len(out), "\nresult:", result[i], "len=", len(result[i]))
 			t.Fail()
 		}
 	}
@@ -62,8 +46,24 @@ func TestMto(t *testing.T) {
 	for i := range in1 {
 		mto(in1[i], in2[i], tempresult)
 		if !slices.Equal(tempresult, expected[i]) {
-			fmt.Println("expected vs actual ->", expected[i], "vs", tempresult)
+			t.Log("expected vs actual ->", expected[i], "vs", tempresult)
 			t.Fail()
 		}
 	}
+}
+
+func benchmarkGridLVSD(b *testing.B, x, y int) {
+	g := MakeGridDefault(x, y)
+	for b.Loop() {
+		g.SimstepLVSD(true)
+	}
+}
+
+func BenchmarkGridLVSD_100x100(b *testing.B)   { benchmarkGridLVSD(b, 100, 100) }
+func BenchmarkGridLVSD_200x200(b *testing.B)   { benchmarkGridLVSD(b, 200, 200) }
+func BenchmarkGridLVSD_500x500(b *testing.B)   { benchmarkGridLVSD(b, 500, 500) }
+func BenchmarkGridLVSD_1000x1000(b *testing.B) { benchmarkGridLVSD(b, 1000, 1000) }
+func BenchmarkGridLVSD_2500x2500(b *testing.B) { benchmarkGridLVSD(b, 2500, 2500) }
+
+func BenchmarkAllGridLVSD(b *testing.B) {
 }

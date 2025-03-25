@@ -10,6 +10,7 @@ type GridEntity struct {
 	Img                            *ebiten.Image
 	X, Y                           uint
 	Bounds                         []int
+	zdata                          zones
 	modAdd, modMult, Area          int
 	Px, Highlight, face, stun, rng []byte
 	Op                             ebiten.DrawImageOptions
@@ -17,8 +18,12 @@ type GridEntity struct {
 	reload                         func()
 	DebugString                    string
 }
+type zones struct {
+	numX, numY, count int
+	zsum, zrange      []int
+}
 
-var testCutoff byte = 128
+var testCutoff byte = 127
 
 // MakeGridDefault generates base CA grid
 func MakeGridDefault(gWidth, gHeight int) *GridEntity {
@@ -47,10 +52,17 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 
 	return &grid
 }
+func zoneSetup(x, y int) zones {
+
+	z := zones{
+		numX: x, numY: y, count: x * y,
+	}
+	z.zsum = make([]int, z.count)
+	z.zrange = make([]int, z.count*4)
+	return z
+}
 
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//****************************************************************************
 //****************************************************************************
 
 func pxisort(pix []byte) []int {
@@ -123,26 +135,30 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 	grid.reload() //roll rng
 	for i := range grid.Area {
-		irng := grid.getrng(i)
-		up := wrap(i-int(grid.X), grid.Area)
-		lft := sidewrap(i, -1, int(grid.X))
-		iR := i * 4
-		upR := up * 4
-		lftR := lft * 4
+		grid.processInteraction(i)
+		grid.checkMove(i)
+	}
+}
+func (grid *GridEntity) processInteraction(i int) {
+	irng := grid.getrng(i)
+	up := wrap(i-int(grid.X), grid.Area)
+	lft := sidewrap(i, -1, int(grid.X))
+	iR := i * 4
+	upR := up * 4
+	lftR := lft * 4
 
-		ival := bavg(grid.Px[iR : iR+3]...) // averaged value of pixel colors
-		uval := bavg(grid.Px[upR : upR+3]...)
-		lval := bavg(grid.Px[lftR : lftR+3]...)
+	ival := bavg(grid.Px[iR : iR+3]...) // averaged value of pixel colors
+	uval := bavg(grid.Px[upR : upR+3]...)
+	lval := bavg(grid.Px[lftR : lftR+3]...)
 
-		results := versusLVSD(irng, ival, uval, lval) // (currently) return slice of lightWin bools.
-		standinrng := uval ^ lval
-		if standinrng > 127 {
-			grid.exec1v1(results[1], i, lft)
-			grid.exec1v1(results[0], i, up)
-		} else {
-			grid.exec1v1(results[0], i, up)
-			grid.exec1v1(results[1], i, lft)
-		}
+	results := versusLVSD(irng, ival, uval, lval) // (currently) return slice of lightWin bools.
+	standinrng := uval ^ lval
+	if standinrng > 127 {
+		grid.exec1v1(results[1], i, lft)
+		grid.exec1v1(results[0], i, up)
+	} else {
+		grid.exec1v1(results[0], i, up)
+		grid.exec1v1(results[1], i, lft)
 	}
 }
 func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
@@ -155,12 +171,12 @@ func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
 	//===TODO: No reason to go through conditionals here and then do a return and send that to another function to check the conditions again to find out what needs to be ran.
 	for i, v := range versus {
 		if v == 127 || v == 128 { // mine (future functionality) if v neutral
-
 			wout[i] = imine
 		} else if (v > 128) == alignment { // if vs alignment == mc alignment
 			wout[i] = ifriend
 		} else { // the actual battle
-			rval := battlemc(iClr, v, (testCutoff + rng))
+			cutoff := (int(testCutoff) + int(rng)) / 2
+			rval := battlemc(iClr, v, byte(cutoff))
 			switch {
 			case rval > 0:
 				wout[i] = iwin
@@ -178,14 +194,21 @@ func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
 // battlemc takes mc and enemy, and returns result
 // Output int: sign = win/lose, size = by how much.
 func battlemc(mainchar, enemy, rng byte) (mcWin int) {
-	var victoryLine byte = mainchar + enemy - 128 //r<victoryLine = lightWin
+	var victoryLine byte = mainchar + enemy - 128 //>127 or 128
 	mcWin = int(rng) - int(victoryLine)           // positive = lightWin
 	if mainchar < 127 {                           // if mc is not light, switch lightwin to darkwin
 		return -mcWin
 	}
 	return mcWin
 }
-func (grid *GridEntity) interactWin(i, e int, bpercent byte){
+func (grid *GridEntity) checkMove(i int) {
+	row := i / int(grid.X)
+	col := i % int(grid.X)
+	_ = row + col
+	//> Determine zone for this pixel.
+
+}
+func (grid *GridEntity) interactWin(i, e int, bpercent byte) {
 
 }
 func (grid *GridEntity) interactMine(i, m int) {
@@ -281,7 +304,7 @@ func (grid *GridEntity) interactFriend(i, e int) {
 	ip := grid.Px[i : i+3]
 	ep := grid.Px[e : e+3]
 
-	ipavg := acdbavg(ip...) 
+	ipavg := acdbavg(ip...)
 	epavg := acdbavg(ep...)
 
 	alignment := bavg(ip...) > 128
@@ -337,9 +360,9 @@ func sliceToward(from, to []byte, amount byte) {
 }
 
 var (
-	overlayRed  []byte = []byte{240, 100, 100, 60}
-	overlayBlue        = []byte{0, 0, 180, 60}
-	overlayMid         = []byte{100, 129, 100, 105}
+	overlayRed  []byte = []byte{240, 128, 128, 25}
+	overlayBlue        = []byte{180, 80, 180, 25}
+	overlayMid         = []byte{100, 160, 100, 100}
 )
 
 // ApplyDbgOverlay does that.

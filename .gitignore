@@ -1,6 +1,8 @@
 .external/goplayground.go
 .external/
 .extras/
+.profiling/
 .vscode/
 tmp/
 extras/
+*.exe
