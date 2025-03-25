@@ -40,6 +40,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		rng:    make([]byte, width*height),
 		modAdd: 0, modMult: 1, //> Unknown if needed
 		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
+		zdata:     zoneSetup(3, 3, gWidth, gHeight),
 	}
 	grid.reload = gfx.Fbytes(grid.rng)
 	grid.Bounds[0] = (gWidth - width) / 2
@@ -52,13 +53,24 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 
 	return &grid
 }
-func zoneSetup(x, y int) zones {
+func zoneSetup(x, y, width, height int) zones {
 
 	z := zones{
 		numX: x, numY: y, count: x * y,
 	}
 	z.zsum = make([]int, z.count)
-	z.zrange = make([]int, z.count*4)
+	z.zrange = make([]int, z.count*2) //{x0,y0,x1,y1...xn,yn}
+	xdiv := width / x
+	xextra := width % x
+	ydiv := height / x
+	yextra := height % y
+	for c := range z.count {
+		posX := c % z.numX
+		xleft := posX * xdiv
+		// if posX==0||posx==(z.numX-1)
+		posY := c / z.numX
+		ylow := posY
+	}
 	return z
 }
 
@@ -360,8 +372,8 @@ func sliceToward(from, to []byte, amount byte) {
 }
 
 var (
-	overlayRed  []byte = []byte{240, 128, 128, 25}
-	overlayBlue        = []byte{180, 80, 180, 25}
+	overlayRed  []byte = []byte{240, 128, 128, 40}
+	overlayBlue        = []byte{60, 50, 180, 40}
 	overlayMid         = []byte{100, 160, 100, 100}
 )
 
