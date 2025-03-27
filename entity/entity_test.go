@@ -67,3 +67,13 @@ func BenchmarkGridLVSD_2500x2500(b *testing.B) { benchmarkGridLVSD(b, 2500, 2500
 
 func BenchmarkAllGridLVSD(b *testing.B) {
 }
+
+// * TestAddBorder is inline in MakeGridDefault
+// originally needed to test zone edge case that no longer exists.
+func TestAddBorder(t *testing.T, bDiv, totW, totH int) []int {
+	borderPX := totW / bDiv
+	bhalf := borderPX / 2
+	inW := totH - borderPX
+	inH := totH - borderPX
+	return []int{inW, inH, bhalf, bhalf, bhalf + inW, bhalf + inH}
+}

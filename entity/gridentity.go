@@ -10,7 +10,7 @@ type GridEntity struct {
 	Img                            *ebiten.Image
 	X, Y                           uint
 	Bounds                         []int
-	zdata                          zones
+	zdata                          *zones
 	modAdd, modMult, Area          int
 	Px, Highlight, face, stun, rng []byte
 	Op                             ebiten.DrawImageOptions
@@ -19,11 +19,11 @@ type GridEntity struct {
 	DebugString                    string
 }
 type zones struct {
-	numX, numY, count int
-	zsum, zrange      []int
+	numX, numY, count                     int
+	zsum1, zsum2, zrange, zcenter, zx, zy []int
+	cellzonebig                           []int
+	cellzone                              []uint16
 }
-
-var testCutoff byte = 127
 
 // MakeGridDefault generates base CA grid
 func MakeGridDefault(gWidth, gHeight int) *GridEntity {
@@ -40,7 +40,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		rng:    make([]byte, width*height),
 		modAdd: 0, modMult: 1, //> Unknown if needed
 		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
-		zdata:     zoneSetup(3, 3, gWidth, gHeight),
+		zdata:     calculateZones(3, 3, gWidth, gHeight),
 	}
 	grid.reload = gfx.Fbytes(grid.rng)
 	grid.Bounds[0] = (gWidth - width) / 2
@@ -53,25 +53,31 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 
 	return &grid
 }
-func zoneSetup(x, y, width, height int) zones {
 
+func calculateZones(x, y, width, height int) *zones {
 	z := zones{
 		numX: x, numY: y, count: x * y,
 	}
-	z.zsum = make([]int, z.count)
-	z.zrange = make([]int, z.count*2) //{x0,y0,x1,y1...xn,yn}
-	xdiv := width / x
-	xextra := width % x
-	ydiv := height / x
-	yextra := height % y
-	for c := range z.count {
-		posX := c % z.numX
-		xleft := posX * xdiv
-		// if posX==0||posx==(z.numX-1)
-		posY := c / z.numX
-		ylow := posY
+	z.zsum1 = make([]int, z.count)
+	z.cellzone = make([]uint16, width*height)
+	xpix := width / x
+	ypix := height / y
+	xmod := width % x  //x pixel remainder
+	ymod := height % y //y pixel remainder
+	xoffs := xmod / 2
+	yoffs := ymod / 2
+
+	for i := range z.cellzone {
+		zx := ((i % width) - xoffs) / xpix
+		zy := ((i / width) - yoffs) / ypix
+		//handle the only condition where end px would be zoneless:
+		if zx == z.numX || zy == z.numY {
+			z.cellzone[i] = uint16(0b1111111111111111)
+		}
+		z.cellzone[i] = uint16((zy * z.numX) + zx)
+
 	}
-	return z
+	return &z
 }
 
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -173,6 +179,9 @@ func (grid *GridEntity) processInteraction(i int) {
 		grid.exec1v1(results[1], i, lft)
 	}
 }
+
+var testCutoff byte = 127 //---~TestCutoff~---
+
 func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
 	wout := make([]outcome, len(versus))
 
@@ -180,7 +189,7 @@ func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
 		return wout
 	}
 	alignment := iClr > 128
-	//===TODO: No reason to go through conditionals here and then do a return and send that to another function to check the conditions again to find out what needs to be ran.
+	//---TODO: No reason to go through conditionals here and then do a return and send that to another function to check the conditions again to find out what needs to be ran.
 	for i, v := range versus {
 		if v == 127 || v == 128 { // mine (future functionality) if v neutral
 			wout[i] = imine
@@ -283,6 +292,8 @@ func (grid *GridEntity) interactNeutral(i, e int) {
 		}
 	*/
 }
+
+// pxswap swaps two slices. unused
 func pxswap(px1, px2 []byte) {
 	tR := px1[0]
 	tG := px1[1]
