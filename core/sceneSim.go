@@ -68,7 +68,7 @@ func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
 	screen.Fill(g.pal[gfx.GrayDark])
 
 	if g.maingrid.Draw {
-		screen.DrawImage(g.maingrid.Img, &g.maingrid.Op)
+		screen.DrawImage(g.maingrid.Img, g.maingrid.Op)
 	}
 
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, g.gWidth/16, 0)

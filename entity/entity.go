@@ -84,6 +84,16 @@ func acdbavg(b ...byte) byte { //TODO: REWRITE - Can't tell if even functioning 
 	}
 	return byte(a)
 }
+func to2D[A interface{}](sl1D []A, width int) [][]A {
+	sl2D := make([][]A, len(sl1D)/width)
+	for y := range sl2D {
+		sl2D[y] = make([]A, width)
+		for x := range sl2D[y] {
+			sl2D[y][x] = sl1D[(y*width)+x]
+		}
+	}
+	return sl2D
+}
 
 // byte slice limit add (probably should combine with bslsub)
 func bsladd(b []byte, add byte) {

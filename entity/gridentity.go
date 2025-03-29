@@ -7,22 +7,31 @@ import (
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	Img                            *ebiten.Image
-	X, Y                           uint
-	Bounds                         []int
-	zdata                          *zones
-	modAdd, modMult, Area          int
-	Px, Highlight, face, stun, rng []byte
-	Op                             ebiten.DrawImageOptions
-	Draw, Debug                    bool
-	reload                         func()
-	DebugString                    string
+	Img             *ebiten.Image
+	X, Y            uint   // (X,Y) -> Width,Height of grid
+	Bounds          []int  // image bounds on screen
+	zone            *zones // zone obj, holds all zone data
+	modAdd, modMult int    //user adjustable modifier values
+	Area            int    // Area(width*Height), total nbr of cells
+	Px              []byte // main color slice for the grid
+	Highlight       []byte // pixels  for debug highlighting, drawn if Debug=true
+	face            []byte //  direction cells are facing
+	stun            []byte // stun status of cells
+	rng             []byte // Slice of rng bytes, refreshed by grid.reload()
+	Op              *ebiten.DrawImageOptions
+	Draw            bool   // grid visibility toggle
+	Debug           bool   // grid debug  toggle
+	reload          func() // func called to refresh rng
+	DebugString     string // holds grid's Debug text
 }
+
+// Subsections of full Grid
+/* Tracks zone stats and zone number of all pixels in grid */
 type zones struct {
-	numX, numY, count                     int
-	zsum1, zsum2, zrange, zcenter, zx, zy []int
-	cellzonebig                           []int
-	cellzone                              []uint16
+	numX, numY, count             int
+	zsum, zrange, zcenter, zx, zy []int
+	cellzonebig                   []int
+	cellzone                      []uint16
 }
 
 // MakeGridDefault generates base CA grid
@@ -34,13 +43,13 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 
 		Img:    ebiten.NewImage(width, height),
 		Bounds: make([]int, 4),
-		Op:     ebiten.DrawImageOptions{},
+		Op:     &ebiten.DrawImageOptions{},
 		X:      uint(width), Y: uint(height), Area: width * height,
 		Px:     make([]byte, width*height*4),
-		rng:    make([]byte, width*height),
-		modAdd: 0, modMult: 1, //> Unknown if needed
+		rng:    make([]byte, width*height), //todo: slim down. Find memory limits (if any)
+		modAdd: 0, modMult: 1,              //> Unknown if needed
 		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
-		zdata:     calculateZones(3, 3, gWidth, gHeight),
+		zone:      calculateZones(3, 3, gWidth, gHeight),
 	}
 	grid.reload = gfx.Fbytes(grid.rng)
 	grid.Bounds[0] = (gWidth - width) / 2
@@ -58,21 +67,28 @@ func calculateZones(x, y, width, height int) *zones {
 	z := zones{
 		numX: x, numY: y, count: x * y,
 	}
-	z.zsum1 = make([]int, z.count)
+	z.zsum = make([]int, z.count)
 	z.cellzone = make([]uint16, width*height)
-	xpix := width / x
-	ypix := height / y
+	xpix := width / z.numX
+	ypix := height / z.numY
 	xmod := width % x  //x pixel remainder
 	ymod := height % y //y pixel remainder
 	xoffs := xmod / 2
 	yoffs := ymod / 2
-
+	oob := uint16(z.numX*z.numY + 1)
 	for i := range z.cellzone {
-		zx := ((i % width) - xoffs) / xpix
-		zy := ((i / width) - yoffs) / ypix
+		zposx := i % width //pixel x in (x,y)
+		zposy := i / width //pixel y in (x,y)
+		if zposx < xoffs || zposy < yoffs {
+			z.cellzone[i] = oob
+			continue
+		}
+		zx := (zposx - xoffs) / xpix //x-position, offset removed every time(oh ok)
+		zy := (zposy - yoffs) / ypix
 		//handle the only condition where end px would be zoneless:
 		if zx == z.numX || zy == z.numY {
-			z.cellzone[i] = uint16(0b1111111111111111)
+			z.cellzone[i] = oob * 100
+			continue
 		}
 		z.cellzone[i] = uint16((zy * z.numX) + zx)
 
@@ -83,6 +99,7 @@ func calculateZones(x, y, width, height int) *zones {
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //****************************************************************************
 
+// pxisort EXCLUSIVELY sorts RGB bytes: returns slice of indices of RGB, biggest to smallest value
 func pxisort(pix []byte) []int {
 	ts := make([]int, 3)
 	if pix[0] > pix[1] {
@@ -153,8 +170,17 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 	grid.reload() //roll rng
 	for i := range grid.Area {
+		grid.pxtozone(i)
 		grid.processInteraction(i)
 		grid.checkMove(i)
+	}
+}
+
+func (grid *GridEntity) pxtozone(i int) {
+	zn := int(grid.zone.cellzone[i])
+	if !(zn >= grid.zone.numX*grid.zone.numY) {
+		add := int(grid.Px[i*4]) + int(grid.Px[i*4+1]) + int(grid.Px[i*4+2])
+		grid.zone.zsum[zn] += add
 	}
 }
 func (grid *GridEntity) processInteraction(i int) {
@@ -223,11 +249,15 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 	return mcWin
 }
 func (grid *GridEntity) checkMove(i int) {
-	row := i / int(grid.X)
-	col := i % int(grid.X)
-	_ = row + col
-	//> Determine zone for this pixel.
-
+	izone := grid.zone.cellzone[i]
+	var zmax int
+	var zorder []int
+	_ = zmax
+	_ = zorder
+	_ = izone
+	for i, v := range grid.zone.zsum {
+		_ = i + v
+	}
 }
 func (grid *GridEntity) interactWin(i, e int, bpercent byte) {
 
