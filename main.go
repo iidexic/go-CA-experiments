@@ -16,10 +16,10 @@ import (
 // globals and Structs
 // ==================================
 var ( //16 by 9: 1920x1080, 960x540
-	PixWidth    int  = 500
-	PixHeight   int  = 1000
-	GameWidth   int  = 300
-	GameHeight  int  = 600
+	PixWidth    int  = 1600
+	PixHeight   int  = 900
+	GameWidth   int  = 400
+	GameHeight  int  = 225
 	tick, frame uint = 0, 0
 	layoutCount int  = 0
 )

@@ -13,6 +13,7 @@ type GridEntity struct {
 	zone            *zones // zone obj, holds all zone data
 	modAdd, modMult int    //user adjustable modifier values
 	Area            int    // Area(width*Height), total nbr of cells
+	nticks          byte
 	Px              []byte // main color slice for the grid
 	Highlight       []byte // pixels  for debug highlighting, drawn if Debug=true
 	face            []byte //  direction cells are facing
@@ -99,7 +100,7 @@ func calculateZones(x, y, width, height int) *zones {
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //****************************************************************************
 
-// pxisort EXCLUSIVELY sorts RGB bytes: returns slice of indices of RGB, biggest to smallest value
+// pxisort EXCLUSIVELY sorts RGB bytes: returns slice of indices of RGB, smallest to largest value
 func pxisort(pix []byte) []int {
 	ts := make([]int, 3)
 	if pix[0] > pix[1] {
@@ -145,14 +146,16 @@ const (
 	istun
 )
 
-func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
+func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
 	i := ipx * 4
 	e := epx * 4
 	switch o {
-	case ilose:
-		sliceToward(grid.Px[i:i+3], grid.Px[e:e+3], 150)
+	case ilose: //** Switching between sliceToward and battleDecisive to test
+		grid.battleDecisive(grid.Px[e:e+4], grid.Px[i:i+4], align, 158)
+		sliceToward(grid.Px[e:e+3], grid.Px[i:i+3], 200)
 	case iwin:
-		sliceToward(grid.Px[e:e+3], grid.Px[i:i+3], 150)
+		grid.battleDecisive(grid.Px[i:i+4], grid.Px[e:e+4], align, 158)
+		sliceToward(grid.Px[i:i+3], grid.Px[e:e+3], 200)
 	case ifriend:
 		grid.interactFriend(i, e)
 	case imine:
@@ -168,12 +171,22 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int) {
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
+	grid.nticks++
+	xorstart := int(grid.nticks % 2)
 	grid.reload() //roll rng
 	for i := range grid.Area {
 		grid.pxtozone(i)
-		grid.processInteraction(i)
+		grid.calculateInteraction(i, xorstart, xorstart+1)
 		grid.checkMove(i)
 	}
+	for i := range grid.Area {
+		grid.calculateInteraction(i, 0, 2)
+	}
+	/*
+		for i := range grid.Area {
+			grid.calculateInteraction(i, 1, 2)
+		}
+	*/
 }
 
 func (grid *GridEntity) pxtozone(i int) {
@@ -183,6 +196,35 @@ func (grid *GridEntity) pxtozone(i int) {
 		grid.zone.zsum[zn] += add
 	}
 }
+
+// calculateInteraction replaces processInteraction, adding direction
+// only 1 interaction per i, but in a direction based on color vals
+func (grid *GridEntity) calculateInteraction(i, xor1, xor2 int) {
+	iR := i * 4
+	dir := (grid.Px[iR+xor1] ^ grid.Px[iR+xor2]) << (grid.nticks % 7)
+
+	dir >>= 6
+	var opp, oppR int
+	switch dir {
+	case 0: //left
+		opp = sidewrap(i, 1, int(grid.X))
+	case 1: //up
+		opp = sidewrap(i, -1, int(grid.X))
+	case 2: //down
+		opp = wrap(i-int(grid.X), grid.Area)
+	case 3: //right
+		opp = wrap(i+int(grid.X), grid.Area)
+	}
+	oppR = opp * 4
+	irng := grid.getrng(i)
+
+	iVal := bavg(grid.Px[iR : iR+3]...) // averaged Value of pixel colors
+	oVal := bavg(grid.Px[oppR : oppR+3]...)
+
+	results := versusLVSD(irng, iVal, oVal) // (currently) return slice of lightWin bools.
+	grid.exec1v1(results[0], i, opp, iVal > 128)
+}
+
 func (grid *GridEntity) processInteraction(i int) {
 	irng := grid.getrng(i)
 	up := wrap(i-int(grid.X), grid.Area)
@@ -198,11 +240,11 @@ func (grid *GridEntity) processInteraction(i int) {
 	results := versusLVSD(irng, ival, uval, lval) // (currently) return slice of lightWin bools.
 	standinrng := uval ^ lval
 	if standinrng > 127 {
-		grid.exec1v1(results[1], i, lft)
-		grid.exec1v1(results[0], i, up)
+		grid.exec1v1(results[1], i, lft, ival > 128)
+		grid.exec1v1(results[0], i, up, ival > 128)
 	} else {
-		grid.exec1v1(results[0], i, up)
-		grid.exec1v1(results[1], i, lft)
+		grid.exec1v1(results[0], i, up, ival > 128)
+		grid.exec1v1(results[1], i, lft, ival > 128)
 	}
 }
 
@@ -259,8 +301,75 @@ func (grid *GridEntity) checkMove(i int) {
 		_ = i + v
 	}
 }
-func (grid *GridEntity) interactWin(i, e int, bpercent byte) {
 
+// battleDecisive will calculate and apply outcome of a battle with a winner and loser
+func (grid *GridEntity) battleDecisive(w, l []byte, victorAlign bool, limit byte) {
+	wsorti := pxisort(w)
+	lsorti := pxisort(l)
+
+	//!Just for experimentation,we are going to go in winner order for now.
+	//> we are going in reverse i order. this is lsorti min->max
+	//> but for wsorti it is max-> min. So this will start by applying strongest win.
+	//! FOR ORIGINAL INTENT, CHANGE BACK TO USING LSORTI
+	//TODO: Change to normal if things are not working out
+	if victorAlign { //loser is dark
+		for i := 2; i >= 0; i-- { // count down for lsorti min to max under 127
+			if w[lsorti[i]] < l[lsorti[i]] {
+				/*
+					buff := l[lsorti[i]] - w[lsorti[i]]
+					w[lsorti[i]] += buff
+					if 255-buff < l[lsorti[i]] {
+						limit -= (255 - l[lsorti[i]])
+						l[lsorti[i]] = 255
+					} else {
+						l[lsorti[i]] += buff
+						limit -= buff
+					}
+				*/
+			} else {
+				mindist := min(w[lsorti[i]], limit) //min=closest to loser
+				change := mindist - l[lsorti[i]]
+				l[lsorti[i]] = mindist
+				//~ here are conditions for the adjustment to be over.
+				//~1. change surpassed the limit
+				//~2. change surpased median win point
+				//~3. limit falls below center (add more for this case?)
+				if change > limit || change < w[wsorti[1]] || (limit-change) < 127 {
+					break
+				}
+				limit -= change
+			}
+		}
+	} else { // loser is light
+		// invert limit:
+		limLow := 255 - limit
+		for i := range 3 {
+			if w[lsorti[i]] > l[lsorti[i]] { // if loser lower, buff winner
+				/*
+					buff := w[lsorti[i]] - l[lsorti[i]]
+
+					w[lsorti[i]] -= buff
+					if buff > l[lsorti[i]] {
+						limit -= l[lsorti[i]]
+						l[lsorti[i]] = 0
+					} else {
+						l[lsorti[i]] -= buff
+						limit -= buff
+						limLow += buff
+					}*/
+			} else {
+				maxdist := max(w[lsorti[i]], limLow) //max=closest to loser
+				change := l[lsorti[i]] - maxdist
+				l[lsorti[i]] = maxdist
+				if change > limit || change < w[wsorti[1]] || (limit-change) < 127 {
+					break
+				}
+				limit -= change
+				limLow += change
+
+			}
+		}
+	}
 }
 func (grid *GridEntity) interactMine(i, m int) {
 	if grid.getrng(i)%10 < 3 {
@@ -413,9 +522,9 @@ func sliceToward(from, to []byte, amount byte) {
 }
 
 var (
-	overlayRed  []byte = []byte{240, 128, 128, 40}
-	overlayBlue        = []byte{60, 50, 180, 40}
-	overlayMid         = []byte{100, 160, 100, 100}
+	overlayRed  []byte = []byte{240, 160, 170, 90}
+	overlayBlue        = []byte{30, 30, 80, 90}
+	overlayMid         = []byte{90, 140, 90, 120}
 )
 
 // ApplyDbgOverlay does that.

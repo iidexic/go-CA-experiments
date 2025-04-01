@@ -38,7 +38,7 @@ func (b *BaseEntity) GetGeom() *ebiten.GeoM {
 	return &b.Opt.GeoM
 }
 
-// NewBaseEntity does its thing
+// NewBaseEntity does its thing.
 func NewBaseEntity(w, h int) *BaseEntity {
 	b := BaseEntity{
 		Img: ebiten.NewImage(w, h),
