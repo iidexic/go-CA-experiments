@@ -13,7 +13,7 @@ var assignedKeys = []ebiten.Key{ebiten.KeyE,
 	ebiten.KeyD, ebiten.KeyC, ebiten.KeySpace,
 	ebiten.KeyArrowDown, ebiten.KeyArrowUp,
 	ebiten.KeyArrowLeft, ebiten.KeyArrowRight,
-	ebiten.KeyEnter}
+	ebiten.KeyEnter, ebiten.KeyEscape}
 
 func inputActions(g *GameSim) {
 	//cursX,cursY:=ebiten.CursorPosition()
@@ -100,5 +100,7 @@ func (g *GameSim) callKey(k ebiten.Key) {
 		entity.CutoffDown()
 	case ebiten.KeyArrowRight:
 		entity.CutoffUp()
+	case ebiten.KeyEscape:
+		g.close = true
 	}
 }

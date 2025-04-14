@@ -50,10 +50,11 @@ func main() {
 	ebiten.SetWindowPosition(0, 80)
 	g := core.GameSimInit(GameWidth, GameHeight)
 
-	//>>>/ launch game loop /<<<//
+	//>>> ===========/ launch game loop /========== <<<//
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
+	//>> ========================================== <<//
 	//-Memory Profiling-
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)

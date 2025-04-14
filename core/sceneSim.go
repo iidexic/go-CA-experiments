@@ -19,7 +19,7 @@ type GameSim struct {
 	gWidth, gHeight, pWidth, pHeight int
 	SimSpeed, modAdd, modMult, uTix  int
 	ticks                            uint16
-	devFASTSTART                     bool
+	devFASTSTART, close              bool
 }
 
 // GameSimInit returns GameSim pointer for main sim scene with default settings
@@ -58,8 +58,10 @@ func (g *GameSim) Update() error {
 		}
 	}
 	inputActions(g)
+	if g.close {
+		return ebiten.Termination
+	}
 	return nil
-
 }
 
 // Draw screen
