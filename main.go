@@ -18,49 +18,63 @@ import (
 var ( //16 by 9: 1920x1080, 960x540
 	PixWidth    int  = 1600
 	PixHeight   int  = 900
-	GameWidth   int  = 400
-	GameHeight  int  = 225
+	GameWidth   int  = 800
+	GameHeight  int  = 450
 	tick, frame uint = 0, 0
 	layoutCount int  = 0
 )
 
-// ?Profiling
+// Profiling
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to 'file'")
 var memprofile = flag.String("memprofile", "", "write memory profile to 'file'")
 
-// ==================================
-func main() {
-	flag.Parse()
-	//-CPU Profiling-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal("could not create CPU profile: ", err)
-		}
-		defer f.Close() //error handling omitted for example?
-		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatal("could not start CPU profile:", err)
-		}
-		defer pprof.StopCPUProfile()
-	} //-------------
-
+func windowSetup() { //TODO: Move into core?
 	ebiten.SetWindowSize(PixWidth, PixHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("CA Experimentor")
 	ebiten.SetWindowPosition(0, 80)
-	g := core.GameSimInit(GameWidth, GameHeight)
 
-	//>>> ===========/ launch game loop /========== <<<//
+}
+func checkFatal(err error, msg string) {
+	if err != nil {
+		log.Fatal(msg, err)
+	}
+}
+
+func setupProfiling() *os.File {
+	flag.Parse()
+	//-CPU Profiling-
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		checkFatal(err, "could not create CPU profile: ")
+		return f
+	} //-------------
+	return nil
+}
+
+// =================================
+func main() {
+	//-CPU Profiling---
+	if f := setupProfiling(); f != nil {
+		defer f.Close()
+		checkFatal(pprof.StartCPUProfile(f), "could not start CPU profile:")
+		defer pprof.StopCPUProfile()
+	} //---------------
+
+	windowSetup()
+
+	g := core.GameSimInit(GameWidth, GameHeight)
+	// ╭────────────────────────── launch game loop ────────────────────────╮
+
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
-	//>> ========================================== <<//
+	// ╰────────────────────────────────────────────────────────────────────╯
 	//-Memory Profiling-
+
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
-		if err != nil {
-			log.Fatal("could not create memory profile: ", err)
-		}
+		checkFatal(err, "could not create memory profile: ")
 		defer f.Close() //error handling omitted for example?
 		runtime.GC()    // get up-to-date statistics
 		/* From pprof documentation:

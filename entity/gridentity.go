@@ -64,6 +64,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 	return &grid
 }
 
+// calculateZones returns a zones struct with the zones for the grid
 func calculateZones(x, y, width, height int) *zones {
 	z := zones{
 		numX: x, numY: y, count: x * y,
@@ -101,28 +102,24 @@ func calculateZones(x, y, width, height int) *zones {
 //****************************************************************************
 
 // pxisort EXCLUSIVELY sorts RGB bytes: returns slice of indices of RGB, smallest to largest value
-func pxisort(pix []byte) []int {
-	ts := make([]int, 3)
-	if pix[0] > pix[1] {
-		ts[0] = 1
-		ts[1] = 0
-	} else {
-		ts[0] = 0
-		ts[1] = 1
-	}
-	if pix[ts[1]] > pix[2] {
-		if pix[ts[0]] > pix[2] {
-			ts[2] = ts[1]
-			ts[1] = ts[0]
-			ts[0] = 2
-			return ts[:3]
+func pxisort(pix []byte) (idx [3]int) {
+	a, b, c := pix[0], pix[1], pix[2]
+	if a <= b {
+		if b <= c {
+			return [3]int{0, 1, 2}
 		}
-		ts[2] = ts[1]
-		ts[1] = 2
-		return ts[:3]
+		if a <= c {
+			return [3]int{0, 2, 1}
+		}
+		return [3]int{2, 0, 1}
 	}
-	ts[2] = 2
-	return ts
+	if a <= c {
+		return [3]int{1, 0, 2}
+	}
+	if b <= c {
+		return [3]int{1, 2, 0}
+	}
+	return [3]int{2, 1, 0}
 }
 
 // XY returns grid GeoM tx, ty screen location
@@ -172,16 +169,20 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 	grid.nticks++
-	xorstart := int(grid.nticks % 2)
-	grid.reload() //roll rng
+	// xorstart := int(grid.nticks % 2)
+	grid.reload()
+	rv := grid.rng[0]
 	for i := range grid.Area {
 		grid.pxtozone(i)
-		grid.calculateInteraction(i, xorstart, xorstart+1)
+		grid.calculateInteraction(i, grid.nticks^rv)
 		grid.checkMove(i)
+		grid.calculateInteraction(i, grid.nticks-rv)
+		grid.checkMove(i)
+
 	}
-	for i := range grid.Area {
-		grid.calculateInteraction(i, 0, 2)
-	}
+	// for i := range grid.Area {
+	// 	grid.calculateInteraction(i, 0, 2)
+	// }
 	/*
 		for i := range grid.Area {
 			grid.calculateInteraction(i, 1, 2)
@@ -199,11 +200,11 @@ func (grid *GridEntity) pxtozone(i int) {
 
 // calculateInteraction replaces processInteraction, adding direction
 // only 1 interaction per i, but in a direction based on color vals
-func (grid *GridEntity) calculateInteraction(i, xor1, xor2 int) {
+func (grid *GridEntity) calculateInteraction(i int, xor1 byte) {
 	iR := i * 4
-	dir := (grid.Px[iR+xor1] ^ grid.Px[iR+xor2]) << (grid.nticks % 7)
+	//dir := (grid.Px[iR+xor1] ^ grid.Px[iR+xor2]) << (grid.nticks % 7)
+	dir := xor1 % 4
 
-	dir >>= 6
 	var opp, oppR int
 	switch dir {
 	case 0: //left
@@ -218,8 +219,8 @@ func (grid *GridEntity) calculateInteraction(i, xor1, xor2 int) {
 	oppR = opp * 4
 	irng := grid.getrng(i)
 
-	iVal := bavg(grid.Px[iR : iR+3]...) // averaged Value of pixel colors
-	oVal := bavg(grid.Px[oppR : oppR+3]...)
+	iVal := bavg(grid.Px[iR], grid.Px[iR+1], grid.Px[iR+2]) // averaged Value of pixel colors
+	oVal := bavg(grid.Px[oppR], grid.Px[oppR+1], grid.Px[oppR+2])
 
 	results := versusLVSD(irng, iVal, oVal) // (currently) return slice of lightWin bools.
 	grid.exec1v1(results[0], i, opp, iVal > 128)
@@ -351,7 +352,7 @@ func (grid *GridEntity) battleDecisive(w, l []byte, victorAlign bool, limit byte
 func (grid *GridEntity) interactMine(i, m int) {
 	if grid.getrng(i)%10 < 3 {
 		ip := grid.Px[i : i+4]
-		ival := bavg(ip[:3]...) //TODO: prevent needing to calc multiple times per pixel per frame
+		ival := bavg(ip[0], ip[1], ip[2])
 		light := ival > 128
 		mp := grid.Px[m : m+4]
 		s := pxisort(mp[:3])
@@ -424,16 +425,17 @@ func (grid *GridEntity) interactStalemate(i, e int) {
 	epx := grid.Px[e : e+4]
 	srng := int(grid.getrng(i+2)) + int(grid.getrng(i+1))
 	xtrarng := grid.getrng(i + 666)
+	iavg := bavg(ipx[0], ipx[1], ipx[2])
 	if xtrarng > 252 { //makes colored noise, lower the threshold = more noise
 		//do the XOR
 		for n := range ipx {
 			ipx[(srng*e+n)%3] ^= epx[(srng*i+n)%3]
 			epx[(srng*i+n)%3] ^= ipx[(srng*e+2+n)%3]
 		}
-	} else if bavg(ipx[:3]...) > 128 {
+	} else if iavg > 128 {
 		bsladd(ipx[:3], 16)
 		bslsub(epx[:3], 16)
-	} else if bavg(ipx[:3]...) < 127 {
+	} else if iavg < 127 {
 		bsladd(epx[:3], 16)
 		bslsub(ipx[:3], 16)
 	}
@@ -446,7 +448,7 @@ func (grid *GridEntity) interactFriend(i, e int) {
 	ipavg := acdbavg(ip...)
 	epavg := acdbavg(ep...)
 
-	alignment := bavg(ip...) > 128
+	alignment := bavg(ip[0], ip[1], ip[2]) > 128
 	if ipavg > epavg {
 		sliceToward(ip, ep, 64)
 	} else if epavg > ipavg {
@@ -510,7 +512,7 @@ func (grid *GridEntity) ApplyDbgOverlay(mode int) []byte {
 	var r int
 	for i := range grid.Area {
 		r = i * 4
-		ba := bavg(grid.Px[r : r+3]...)
+		ba := bavg(grid.Px[r], grid.Px[r+1], grid.Px[r+2])
 		switch {
 		case ba > 128:
 			mto(grid.Px[r:r+4], overlayRed, overlay[r:r+4])

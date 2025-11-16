@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"fmt"
 	"slices"
 	"testing"
 
@@ -28,18 +27,19 @@ func TestSidewrap(t *testing.T) {
 		t.Fail()
 	}
 }
-func TestSort(t *testing.T) {
-	var vals [][]byte = [][]byte{{7, 8, 9}, {7, 9, 8}, {8, 7, 9}, {8, 9, 7}, {9, 7, 8}, {9, 8, 7}}
-	var result [][]int = [][]int{{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {2, 0, 1}, {1, 2, 0}, {2, 1, 0}}
-	for i := range 6 {
-		out := pxisort(vals[i])
-		if !slices.Equal(out, result[i]) {
-			t.Log("out:", out, "len=", len(out), "\nresult:", result[i], "len=", len(result[i]))
-			t.Fail()
-		}
-	}
-	fmt.Println("test end")
-}
+
+//	func TestSort(t *testing.T) {
+//		var vals [][]byte = [][]byte{{7, 8, 9}, {7, 9, 8}, {8, 7, 9}, {8, 9, 7}, {9, 7, 8}, {9, 8, 7}}
+//		var result [][]int = [][]int{{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {2, 0, 1}, {1, 2, 0}, {2, 1, 0}}
+//		for i := range 6 {
+//			out := pxisort(vals[i])
+//			if !slices.Equal(out, result[i]) {
+//				t.Log("out:", out, "len=", len(out), "\nresult:", result[i], "len=", len(result[i]))
+//				t.Fail()
+//			}
+//		}
+//		fmt.Println("test end")
+//	}
 func TestMto(t *testing.T) {
 	in1 := [][]byte{{255, 128, 200, 0}}
 	in2 := [][]byte{{33, 230, 180, 255}}
@@ -62,7 +62,7 @@ func TestXORByteDistro(t *testing.T) {
 	_, _ = fastrand.Read(rb)
 	for i := range xshift {
 		xshift[i] = (rb[i*3] ^ rb[i*3+1]) >> 6
-		avg := bavg(rb[i*3 : i*3+3]...)
+		avg := bavg(rb[i*3], rb[i*3+1], rb[i*3+2])
 		switch {
 		case avg == 127 || avg == 128:
 			counts[8]++

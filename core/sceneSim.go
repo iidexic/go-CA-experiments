@@ -25,7 +25,7 @@ type GameSim struct {
 // GameSimInit returns GameSim pointer for main sim scene with default settings
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	g := &GameSim{
-		SimSpeed: 2,
+		SimSpeed: 1,
 		modAdd:   1,
 		modMult:  4,
 		gWidth:   GameSimWidth,
@@ -65,7 +65,7 @@ func (g *GameSim) Update() error {
 }
 
 // Draw screen
-func (g *GameSim) Draw(screen *ebiten.Image) { //^DRAW
+func (g *GameSim) Draw(screen *ebiten.Image) {
 	util.DbgCountFrames()
 	screen.Fill(g.pal[gfx.GrayDark])
 

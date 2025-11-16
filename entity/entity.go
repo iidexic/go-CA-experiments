@@ -64,16 +64,19 @@ func sidewrap(index, move, width int) int {
 
 }
 
-func bavg(b ...byte) (avg byte) {
-	var rval int = 0
-	for i := range b {
-		rval += int(b[i])
-	}
-	return byte(rval / len(b))
+//	func bavg(b ...byte) byte {
+//		var rval int = 0
+//		for i := range b {
+//			rval += int(b[i])
+//		}
+//		return byte(rval / len(b))
+//	}
+func bavg(r, g, b byte) byte {
+	return byte((int(r) + int(g) + int(b)) / 3)
 }
 
 // absolute center difference byte average.
-func acdbavg(b ...byte) byte { //TODO: REWRITE - Can't tell if even functioning as intended
+func acdbavg(b ...byte) byte {
 	tot := 0
 	for _, v := range b {
 		tot += int(v) - 127
@@ -84,7 +87,7 @@ func acdbavg(b ...byte) byte { //TODO: REWRITE - Can't tell if even functioning 
 	}
 	return byte(a)
 }
-func to2D[A interface{}](sl1D []A, width int) [][]A {
+func to2D[A any](sl1D []A, width int) [][]A {
 	sl2D := make([][]A, len(sl1D)/width)
 	for y := range sl2D {
 		sl2D[y] = make([]A, width)

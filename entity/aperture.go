@@ -6,24 +6,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type ruleset interface {
-	set(syscomponents)
-	eval([]byte) func()
-}
-type drawable interface {
-}
-type syscomponents struct {
-}
+// Removed ruleset, syscomponent struct,
 
 type pt = image.Point //currently unused
 
 type cellMatrix struct {
-	img   *ebiten.Image
-	x, y  int
-	Area  int
-	Px    []byte
-	zoom  byte
-	rules ruleset
+	pt
+	img  *ebiten.Image
+	x, y int
+	Area int
+	Px   []byte
+	zoom byte
 }
 
 func initCellMatrix(width, height int) cellMatrix {
