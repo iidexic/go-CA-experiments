@@ -37,6 +37,11 @@ func (b *BaseEntity) GetOpt() *ebiten.DrawImageOptions {
 func (b *BaseEntity) GetGeom() *ebiten.GeoM {
 	return &b.Opt.GeoM
 }
+func (b *BaseEntity) XY() (int, int) {
+	x, y := b.GeoM.Apply(0, 0)
+	_, _ = x, y
+	return int(x), int(y)
+}
 
 // NewBaseEntity does its thing.
 func NewBaseEntity(w, h int) *BaseEntity {

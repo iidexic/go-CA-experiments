@@ -38,6 +38,8 @@ func sizeVobj(x, y, w, h int) vobj {
 		i:  ebiten.NewImage(w, h),
 		op: ebiten.DrawImageOptions{},
 	}
+	v.i.Bounds()
+
 	v.g = &v.op.GeoM
 	v.g.Translate(float64(x), float64(y))
 	return v

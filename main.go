@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -28,13 +29,6 @@ var ( //16 by 9: 1920x1080, 960x540
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to 'file'")
 var memprofile = flag.String("memprofile", "", "write memory profile to 'file'")
 
-func windowSetup() { //TODO: Move into core?
-	ebiten.SetWindowSize(PixWidth, PixHeight)
-	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetWindowTitle("CA Experimentor")
-	ebiten.SetWindowPosition(0, 80)
-
-}
 func checkFatal(err error, msg string) {
 	if err != nil {
 		log.Fatal(msg, err)
@@ -52,21 +46,61 @@ func setupProfiling() *os.File {
 	return nil
 }
 
+type argtrigs struct {
+	debug      bool
+	profile    bool
+	cpuprofile string
+	memprofile string
+}
+
+func args() argtrigs {
+	trigs := argtrigs{
+		debug:      false,
+		profile:    false,
+		cpuprofile: "",
+		memprofile: "",
+	}
+	args := os.Args[1:]
+	for n, arg := range args {
+		switch arg {
+		case "debug", "-dbg":
+			trigs.debug = true
+		case "profile", "-prof":
+			trigs.profile = true
+		case "cpuprofile", "-cpuprof":
+			trigs.cpuprofile = args[n+1]
+		case "memprofile", "-memprof":
+			trigs.memprofile = args[n+1]
+			if trigs.memprofile == "" {
+				print("memprofile requires a file name")
+				trigs.memprofile = "mem.prof"
+			}
+		default:
+			fmt.Printf("Unknown argument: '%s'\n", arg)
+		}
+	}
+	return trigs
+}
+
 // =================================
 func main() {
 	//-CPU Profiling---
+
 	if f := setupProfiling(); f != nil {
 		defer f.Close()
 		checkFatal(pprof.StartCPUProfile(f), "could not start CPU profile:")
 		defer pprof.StopCPUProfile()
 	} //---------------
 
-	windowSetup()
+	game := core.GetScene(PixWidth, PixHeight)
 
-	g := core.GameSimInit(GameWidth, GameHeight)
+	// g := core.GameSimInit(GameWidth, GameHeight)
 	// ╭────────────────────────── launch game loop ────────────────────────╮
 
-	if err := ebiten.RunGame(g); err != nil {
+	if err := ebiten.RunGame(game); err != nil {
+		if err == core.QuitGame {
+			return
+		}
 		log.Fatal(err)
 	}
 	// ╰────────────────────────────────────────────────────────────────────╯

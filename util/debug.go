@@ -3,53 +3,71 @@ package util
 import (
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/iidexic/go-CA-experiments/input"
 )
 
-type msgGen func() string
-type msgScreenGen func(int, int) string
 type showDebugInfo struct { // bools toggle what gets put into debug msg. len(Output)
 	showDebug                        bool
 	len, pixW, pixH, gameW, gameH    int
 	Output, UpdateDetail, DrawDetail string
 	keysAppend                       []ebiten.Key
 	keysDown                         []ebiten.Key
-	SelectDebug                      []int
+	SelectDebug                      []debugstat
+	errorText                        string
 }
+
+type debugstat int
 
 // Show consts determine which debug messages are included onscreen
 const (
-	showTPS int = iota //0
-	showTick
-	showFrames
-	showScreen
-	showLayouts
-	showWindowPX
-	showFPS
-	showKhandlr
-	showUpdateDetail
-	showDrawDetail
-	showMouseDetail
-	nl
+	ShowTPS debugstat = iota //0
+	ShowTick
+	ShowFrames
+	ShowScreen
+	ShowLayouts
+	ShowWindowPX
+	ShowFPS
+	ShowKhandlr
+	ShowUpdateDetail
+	ShowDrawDetail
+	ShowMouseDetail
+	ShowErrorText
+	newline
 )
 
 var (
 	frame, tick, layoutCount int
 )
 
+//TODO: Rebuild so doesn't import other pacakges.
+
 // Dbg houses all required information/settings for debug messages
 var Dbg showDebugInfo = showDebugInfo{
-	showDebug:   true,
-	len:         0,
-	gameW:       0,
-	gameH:       0,
-	pixW:        0,
-	pixH:        0,
-	keysAppend:  make([]ebiten.Key, 0, 12),
-	SelectDebug: []int{showTPS, showFPS, showMouseDetail, nl, showUpdateDetail, showDrawDetail},
+	showDebug:  true,
+	len:        0,
+	gameW:      0,
+	gameH:      0,
+	pixW:       0,
+	pixH:       0,
+	keysAppend: make([]ebiten.Key, 0, 12),
+	SelectDebug: []debugstat{ShowWindowPX, ShowScreen, ShowTPS, ShowFPS, ShowMouseDetail,
+		newline, ShowUpdateDetail, ShowDrawDetail,
+		newline, ShowErrorText},
+}
+
+func (d *showDebugInfo) WriteDraw(str string)   { d.DrawDetail = str }
+func (d *showDebugInfo) WriteUpdate(str string) { d.UpdateDetail = str }
+func (d *showDebugInfo) AddStat(stat debugstat) { d.SelectDebug = append(d.SelectDebug, stat) }
+func (d *showDebugInfo) RemoveStat(stat debugstat) {
+	for i, v := range d.SelectDebug {
+		if v == stat {
+			d.SelectDebug = slices.Delete(d.SelectDebug, i, i+1)
+			break
+		}
+	}
 }
 
 // SetValues currently sets screen values for debug display
@@ -70,35 +88,37 @@ func (d *showDebugInfo) DebugBuildOutput() {
 	//outSlice := make([]string, len(d.SelectDebug))
 	for _, v := range Dbg.SelectDebug {
 		switch v { // can actually do full string assembly in here by using a strings.Builder...
-		case showTPS:
+		case ShowTPS:
 			_, e = sb.WriteString(fmt.Sprintf("| tps: %0.0f ", ebiten.ActualTPS()))
-		case showTick:
+		case ShowTick:
 			_, e = sb.WriteString(fmt.Sprintf("| tick: %03d ", tick/10))
-		case showFrames:
+		case ShowFrames:
 			_, e = sb.WriteString(fmt.Sprintf("| frames: %03d ", frame/10))
-		case showScreen:
+		case ShowScreen:
 			_, e = sb.WriteString(fmt.Sprintf("| game/screen: %dx%d ", d.gameW, d.gameH))
-		case showLayouts:
+		case ShowLayouts:
 			_, e = sb.WriteString(fmt.Sprintf("| layout: %d ", layoutCount/10))
-		case showWindowPX:
+		case ShowWindowPX:
 			_, e = sb.WriteString(fmt.Sprintf("| px: %dx%d ", d.pixW, d.pixH))
-		case showFPS:
+		case ShowFPS:
 			_, e = sb.WriteString(fmt.Sprintf("| fps: %0.0f ", ebiten.ActualFPS()))
-		case showKhandlr:
-			kstr := ""
-			keys := input.KeysOut()
-			for _, k := range *keys {
-				kstr += k.String()
-			}
-			_, e = sb.WriteString(fmt.Sprintf("| inKB[len %d]: %s", len(*keys), kstr))
-		case showUpdateDetail:
+		case ShowKhandlr: // TODO: add new input handling system back in here
+			// kstr := ""
+			// keys := input.KeysOut()
+			// for _, k := range *keys {
+			// 	kstr += k.String()
+			// }
+			// _, e = sb.WriteString(fmt.Sprintf("| inKB[len %d]: %s", len(*keys), kstr))
+		case ShowUpdateDetail:
 			_, e = sb.WriteString(d.UpdateDetail)
-		case showDrawDetail:
+		case ShowDrawDetail:
 			_, e = sb.WriteString(d.DrawDetail)
-		case showMouseDetail:
+		case ShowMouseDetail:
 			mX, mY := ebiten.CursorPosition()
 			_, e = sb.WriteString(fmt.Sprintf("| pos:(%3d,%3d), keys:%s", mX, mY, dbgGetMouse()))
-		case nl:
+		case ShowErrorText:
+			_, e = sb.WriteString(d.errorText)
+		case newline:
 			_, e = sb.WriteString("\n")
 		}
 		if e != nil {
@@ -110,6 +130,13 @@ func (d *showDebugInfo) DebugBuildOutput() {
 
 	if !d.showDebug {
 		d.Output = "[!!debug should be off!!]\n\n"
+	}
+
+}
+
+func (d *showDebugInfo) AddErrorF(ftext string, args ...any) {
+	if ftext != "" {
+		d.errorText += fmt.Sprintf("["+ftext+"]", args...)
 	}
 
 }

@@ -1,34 +1,27 @@
 package input
 
-//STUB - need to rethink input handling
+import "github.com/hajimehoshi/ebiten/v2"
 
-import (
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
-)
-
-// maybe just make a struct for these
-var keysPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
-var keysJustPressed []ebiten.Key = make([]ebiten.Key, 0, 16)
-
-// GetInKB is DEBUG Key List
-func GetInKB() {
-	keysPressed = inpututil.AppendPressedKeys(keysPressed[:0])
+type InputHandler struct {
+	*KeyMap
+	Keymaps map[string]KeyBindManager
 }
 
-// GetJustPressedKeys just middlemans right now
-func GetJustPressedKeys() []ebiten.Key {
-	keysJustPressed = inpututil.AppendJustPressedKeys(keysJustPressed[:0])
-	return keysJustPressed
+var mainhandler = InputHandler{
+	KeyMap:  &KeyMap{binds: make(map[ebiten.Key]KeyBind)},
+	Keymaps: make(map[string]KeyBindManager),
 }
 
-// KeysOut (Debug use)
-func KeysOut() *[]ebiten.Key {
-	return &keysPressed
+func NewKeymap(name string) *KeyMap {
+	km := KeyMap{binds: make(map[ebiten.Key]KeyBind)}
+	mainhandler.Keymaps[name] = &km
+	return &km
 }
 
-// KeyHandler
-type keyhandler struct {
-	keys  []ebiten.Key
-	binds []int
+// Update all input
+func (ih *InputHandler) Update() {
+	go ih.KeyMap.Update()
+	for _, km := range ih.Keymaps {
+		go km.Update()
+	}
 }
