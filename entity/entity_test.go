@@ -81,7 +81,6 @@ func TestXORByteDistro(t *testing.T) {
 	}
 	t.Log("hi=", hi, "| lo=", lo)
 	t.Log("defaults-->", defaults)
-	t.Fail()
 }
 
 func TestCalcZone0(t *testing.T)     { testCalcZones(t, 5, 7, 23, 20) }
@@ -120,7 +119,7 @@ func testCalcZones(t *testing.T, zx, zy, width, height int) {
 func benchmarkGridLVSD(b *testing.B, x, y int) {
 	g := MakeGridDefault(x, y)
 	for b.Loop() {
-		g.SimstepLVSD(true)
+		g.SimstepLVSD()
 	}
 }
 

@@ -43,7 +43,7 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		X:      uint(width), Y: uint(height), Area: width * height,
 		Px:   make([]byte, width*height*4),
 		rng:  make([]byte, width*height),
-		zone: calculateZones(3, 3, gWidth, gHeight),
+		zone: calculateZones(3, 3, width, height),
 	}
 	grid.reload = gfx.Fbytes(grid.rng)
 	grid.Bounds[0] = (gWidth - width) / 2
@@ -138,12 +138,11 @@ const (
 func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
 	i := ipx * 4
 	e := epx * 4
+	_ = align
 	switch o {
-	case ilose: //** Switching between sliceToward and battleDecisive to test
-		grid.battleDecisive(grid.Px[e:e+4], grid.Px[i:i+4], align, 158)
+	case ilose:
 		sliceToward(grid.Px[e:e+3], grid.Px[i:i+3], 200)
 	case iwin:
-		grid.battleDecisive(grid.Px[i:i+4], grid.Px[e:e+4], align, 158)
 		sliceToward(grid.Px[i:i+3], grid.Px[e:e+3], 200)
 	case ifriend:
 		grid.interactFriend(i, e)
@@ -156,9 +155,10 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
 
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
-func (grid *GridEntity) SimstepLVSD(pixLock bool) {
+func (grid *GridEntity) SimstepLVSD() {
 	grid.nticks++
 	grid.reload()
+	clear(grid.zone.zsum)
 	rv := grid.rng[0]
 	for i := range grid.Area {
 		grid.pxtozone(i)
@@ -244,47 +244,6 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 		return -mcWin
 	}
 	return mcWin
-}
-// battleDecisive will calculate and apply outcome of a battle with a winner and loser
-func (grid *GridEntity) battleDecisive(w, l []byte, victorAlign bool, limit byte) {
-	wsorti := pxisort(w)
-	lsorti := pxisort(l)
-
-	// Reverse-i iteration on lsorti: starts by applying strongest win.
-	if victorAlign { //loser is dark
-		for i := 2; i >= 0; i-- {
-			if w[lsorti[i]] < l[lsorti[i]] {
-				// nothing to do — winner already lower on this channel
-			} else {
-				mindist := min(w[lsorti[i]], limit) //min=closest to loser
-				change := mindist - l[lsorti[i]]
-				l[lsorti[i]] = mindist
-				// stop when: change over limit / under median win / limit under center
-				if change > limit || change < w[wsorti[1]] || (limit-change) < 127 {
-					break
-				}
-				limit -= change
-			}
-		}
-	} else { // loser is light
-		// invert limit:
-		limLow := 255 - limit
-		for i := range 3 {
-			if w[lsorti[i]] > l[lsorti[i]] {
-				// nothing to do — winner already higher on this channel
-			} else {
-				maxdist := max(w[lsorti[i]], limLow) //max=closest to loser
-				change := l[lsorti[i]] - maxdist
-				l[lsorti[i]] = maxdist
-				if change > limit || change < w[wsorti[1]] || (limit-change) < 127 {
-					break
-				}
-				limit -= change
-				limLow += change
-
-			}
-		}
-	}
 }
 func (grid *GridEntity) interactMine(i, m int) {
 	if grid.getrng(i)%10 < 3 {

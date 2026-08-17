@@ -45,7 +45,7 @@ func (g *GameSim) Update() error {
 		g.fastInitializeDev()
 	}
 	if g.SimSpeed > 0 && g.isSimTick() {
-		g.maingrid.SimstepLVSD(true)
+		g.maingrid.SimstepLVSD()
 		if g.maingrid.Debug {
 			g.maingrid.Img.WritePixels(g.maingrid.ApplyDbgOverlay(0))
 		} else {

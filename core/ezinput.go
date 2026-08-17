@@ -57,14 +57,6 @@ func (g *GameSim) callKey(k ebiten.Key) {
 	switch k {
 	case ebiten.KeyG:
 		g.maingrid.Draw = !g.maingrid.Draw
-	case ebiten.KeyC:
-	case ebiten.KeyE:
-		/*//[previous troubleshooting]
-		cbt := gfx.GetQuickRNG(8)
-		cbt.ROPcheck()
-		bt := []byte{<-cbt.C, <-cbt.C, <-cbt.C, <-cbt.C, <-cbt.C, <-cbt.C, <-cbt.C}
-		fmt.Printf("[%b.%b.%b.%b.%b.%b.%b]\n", bt[0], bt[1], bt[2], bt[3], bt[4], bt[5], bt[6])
-		*/
 	case ebiten.KeyR:
 		g.maingrid.Px = gfx.Randpx(uint(g.maingrid.Area))
 		g.maingrid.Img.WritePixels(g.maingrid.Px)
