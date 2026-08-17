@@ -8,7 +8,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/iidexic/go-CA-experiments/entity"
 	"github.com/iidexic/go-CA-experiments/gfx"
-	"github.com/iidexic/go-CA-experiments/input"
 	"github.com/iidexic/go-CA-experiments/util"
 )
 
@@ -85,7 +84,6 @@ func (g *GameSim) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
-	input.GetInKB() //DEBUG USE
 	util.Dbg.UpdateDetail = fmt.Sprintf(
 		"||SPD:%d Cut:%d",
 		g.SimSpeed, entity.CutoffIs())

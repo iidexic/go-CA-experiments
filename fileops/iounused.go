@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 )
 
+var ErrorNilStat = errors.New("nil Stat but threw no error")
+
 // PathExists attempts to check if a path exists
 // returns true unless received a NotExist error from os.Stat
 // This should work in most cases, but probably not all

@@ -3,7 +3,6 @@ package fileops
 import (
 	"image"
 	"os"
-	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -21,14 +20,4 @@ func ImageFromFile(path string) (*ebiten.Image, error) {
 	}
 
 	return ebiten.NewImageFromImage(img), nil
-}
-
-var cleanpath = filepath.Clean
-
-var fileExists = func(path string) bool {
-	_, err := os.Stat(path)
-	if err != nil {
-		return os.IsExist(err)
-	}
-	return true
 }

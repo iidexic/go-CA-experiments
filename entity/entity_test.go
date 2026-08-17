@@ -115,34 +115,8 @@ func testCalcZones(t *testing.T, zx, zy, width, height int) {
 		}
 		t.Fail()
 	}
-	si := make([]int, len(z1.cellzone))
-	for i := range z1.cellzone {
-		si[i] = i
-	}
-	czi := to2D(si, width)
-	cellzone2D := to2D(z1.cellzone, width)
-	t.Log("all assigned zones:")
-	for i := range cellzone2D {
-		t.Log(czi[i])
-		t.Log(cellzone2D[i])
-	}
-
-	//t.Log("px-i", czi, "cellzone:", cellzone2D)
 }
 
-func TestTo2D(t *testing.T) { //Passing
-	schek := []int{4, 3, 2, 1, 8, 7, 6, 5, 0, 0, 0, 0, 16, 15, 14, 13, 20, 19, 18, 17}
-	sresult := [][]int{{4, 3, 2, 1}, {8, 7, 6, 5}, {0, 0, 0, 0}, {16, 15, 14, 13}, {20, 19, 18, 17}}
-	output := to2D(schek, 4)
-	for y := range output {
-		for x := range output[y] {
-			if output[y][x] != sresult[y][x] {
-				t.Logf("y:%d,x:%d,got:%d,wanted:%d", y, x, output[y][x], sresult[y][x])
-				t.Fail()
-			}
-		}
-	}
-}
 func benchmarkGridLVSD(b *testing.B, x, y int) {
 	g := MakeGridDefault(x, y)
 	for b.Loop() {
