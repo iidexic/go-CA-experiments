@@ -7,23 +7,18 @@ import (
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	Img             *ebiten.Image
-	X, Y            uint   // (X,Y) -> Width,Height of grid
-	Bounds          []int  // image bounds on screen
-	zone            *zones // zone obj, holds all zone data
-	modAdd, modMult int    //user adjustable modifier values
-	Area            int    // Area(width*Height), total nbr of cells
-	nticks          byte
-	Px              []byte // main color slice for the grid
-	Highlight       []byte // pixels  for debug highlighting, drawn if Debug=true
-	face            []byte //  direction cells are facing
-	stun            []byte // stun status of cells
-	rng             []byte // Slice of rng bytes, refreshed by grid.reload()
-	Op              *ebiten.DrawImageOptions
-	Draw            bool   // grid visibility toggle
-	Debug           bool   // grid debug  toggle
-	reload          func() // func called to refresh rng
-	DebugString     string // holds grid's Debug text
+	Img    *ebiten.Image
+	X, Y   uint   // (X,Y) -> Width,Height of grid
+	Bounds []int  // image bounds on screen
+	zone   *zones // zone obj, holds all zone data
+	Area   int    // Area(width*Height), total nbr of cells
+	nticks byte
+	Px     []byte // main color slice for the grid
+	rng    []byte // Slice of rng bytes, refreshed by grid.reload()
+	Op     *ebiten.DrawImageOptions
+	Draw   bool   // grid visibility toggle
+	Debug  bool   // grid debug  toggle
+	reload func() // func called to refresh rng
 }
 
 // Subsections of full Grid
@@ -46,11 +41,9 @@ func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 		Bounds: make([]int, 4),
 		Op:     &ebiten.DrawImageOptions{},
 		X:      uint(width), Y: uint(height), Area: width * height,
-		Px:     make([]byte, width*height*4),
-		rng:    make([]byte, width*height), //todo: slim down. Find memory limits (if any)
-		modAdd: 0, modMult: 1,              //> Unknown if needed
-		Highlight: []byte{127, 127, 127, 160, 255, 40, 44, 40, 0, 1, 191, 40},
-		zone:      calculateZones(3, 3, gWidth, gHeight),
+		Px:   make([]byte, width*height*4),
+		rng:  make([]byte, width*height),
+		zone: calculateZones(3, 3, gWidth, gHeight),
 	}
 	grid.reload = gfx.Fbytes(grid.rng)
 	grid.Bounds[0] = (gWidth - width) / 2
@@ -140,7 +133,6 @@ const (
 	istale
 	ifriend
 	imine
-	istun
 )
 
 func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
@@ -159,35 +151,20 @@ func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
 		grid.interactMine(i, e)
 	case istale:
 		grid.interactStalemate(i, e)
-	case ineut:
-		grid.interactNeutral(i, e)
 	}
-
 }
 
 // SimstepLVSD performs one cycle/screen of checks and updates
 // for the center-distance intensity comparison sim ("Light VS Dark")
 func (grid *GridEntity) SimstepLVSD(pixLock bool) {
 	grid.nticks++
-	// xorstart := int(grid.nticks % 2)
 	grid.reload()
 	rv := grid.rng[0]
 	for i := range grid.Area {
 		grid.pxtozone(i)
 		grid.calculateInteraction(i, grid.nticks^rv)
-		grid.checkMove(i)
 		grid.calculateInteraction(i, grid.nticks-rv)
-		grid.checkMove(i)
-
 	}
-	// for i := range grid.Area {
-	// 	grid.calculateInteraction(i, 0, 2)
-	// }
-	/*
-		for i := range grid.Area {
-			grid.calculateInteraction(i, 1, 2)
-		}
-	*/
 }
 
 func (grid *GridEntity) pxtozone(i int) {
@@ -268,50 +245,21 @@ func battlemc(mainchar, enemy, rng byte) (mcWin int) {
 	}
 	return mcWin
 }
-func (grid *GridEntity) checkMove(i int) {
-	izone := grid.zone.cellzone[i]
-	var zmax int
-	var zorder []int
-	_ = zmax
-	_ = zorder
-	_ = izone
-	for i, v := range grid.zone.zsum {
-		_ = i + v
-	}
-}
-
 // battleDecisive will calculate and apply outcome of a battle with a winner and loser
 func (grid *GridEntity) battleDecisive(w, l []byte, victorAlign bool, limit byte) {
 	wsorti := pxisort(w)
 	lsorti := pxisort(l)
 
-	//!Just for experimentation,we are going to go in winner order for now.
-	//> we are going in reverse i order. this is lsorti min->max
-	//> but for wsorti it is max-> min. So this will start by applying strongest win.
-	//! FOR ORIGINAL INTENT, CHANGE BACK TO USING LSORTI
-	//TODO: Change to normal if things are not working out
+	// Reverse-i iteration on lsorti: starts by applying strongest win.
 	if victorAlign { //loser is dark
-		for i := 2; i >= 0; i-- { // count down for lsorti min to max under 127
+		for i := 2; i >= 0; i-- {
 			if w[lsorti[i]] < l[lsorti[i]] {
-				/*
-					buff := l[lsorti[i]] - w[lsorti[i]]
-					w[lsorti[i]] += buff
-					if 255-buff < l[lsorti[i]] {
-						limit -= (255 - l[lsorti[i]])
-						l[lsorti[i]] = 255
-					} else {
-						l[lsorti[i]] += buff
-						limit -= buff
-					}
-				*/
+				// nothing to do — winner already lower on this channel
 			} else {
 				mindist := min(w[lsorti[i]], limit) //min=closest to loser
 				change := mindist - l[lsorti[i]]
 				l[lsorti[i]] = mindist
-				//~ here are conditions for the adjustment to be over.
-				//~1. change surpassed the limit
-				//~2. change surpased median win point
-				//~3. limit falls below center (add more for this case?)
+				// stop when: change over limit / under median win / limit under center
 				if change > limit || change < w[wsorti[1]] || (limit-change) < 127 {
 					break
 				}
@@ -322,19 +270,8 @@ func (grid *GridEntity) battleDecisive(w, l []byte, victorAlign bool, limit byte
 		// invert limit:
 		limLow := 255 - limit
 		for i := range 3 {
-			if w[lsorti[i]] > l[lsorti[i]] { // if loser lower, buff winner
-				/*
-					buff := w[lsorti[i]] - l[lsorti[i]]
-
-					w[lsorti[i]] -= buff
-					if buff > l[lsorti[i]] {
-						limit -= l[lsorti[i]]
-						l[lsorti[i]] = 0
-					} else {
-						l[lsorti[i]] -= buff
-						limit -= buff
-						limLow += buff
-					}*/
+			if w[lsorti[i]] > l[lsorti[i]] {
+				// nothing to do — winner already higher on this channel
 			} else {
 				maxdist := max(w[lsorti[i]], limLow) //max=closest to loser
 				change := l[lsorti[i]] - maxdist
@@ -395,30 +332,6 @@ func bmov(src, dest byte, amt byte) (byte, byte) {
 	src -= lim
 	dest += lim
 	return src, dest
-}
-func (grid *GridEntity) interactNeutral(i, e int) {
-	/*
-		rng := grid.getrng(i)
-		if rng < 3 {
-			rd3 := rng / 3
-			r1m3 := (rng + (rd3 % 2)) % 3
-			r2m3 := (rng + 2) % 3
-			ip := grid.Px[i : i+3]
-			ip[r1m3], ip[rng] = bmov(ip[r1m3], ip[rng], ip[r1m3])
-			ip[r2m3], ip[rng] = bmov(ip[r2m3], ip[rng], ip[r2m3])
-		}
-	*/
-}
-
-// pxswap swaps two slices. unused
-func pxswap(px1, px2 []byte) {
-	tR := px1[0]
-	tG := px1[1]
-	tB := px1[2]
-	px1 = px2
-	px2[0] = tR
-	px2[1] = tG
-	px2[2] = tB
 }
 func (grid *GridEntity) interactStalemate(i, e int) {
 	ipx := grid.Px[i : i+4]
@@ -530,22 +443,6 @@ func mto(bs1, bs2, dest []byte) { //^ what
 		dest[i] = moveToward(bs1[i], bs2[i], bs2[3])
 	}
 	dest[3] = 255
-}
-
-// moves color from one px to another.
-// * up==true will move color from px1 to px2 and vice versa
-func cmov(px1, px2 []byte, up bool, amt ...byte) {
-	for i, a := range amt {
-		if up {
-			lim := min(px1[i], 255-px2[i], a)
-			px1[i] -= lim
-			px2[i] += lim
-		} else {
-			lim := min(px2[i], 255-px1[i], a)
-			px1[i] += lim
-			px2[i] -= lim
-		}
-	}
 }
 
 // CutoffUp is to manually change victory cutoff to see effects in real-time

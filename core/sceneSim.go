@@ -17,7 +17,7 @@ type GameSim struct {
 	maingrid                         *entity.GridEntity
 	pal                              []color.RGBA
 	gWidth, gHeight, pWidth, pHeight int
-	SimSpeed, modAdd, modMult, uTix  int
+	SimSpeed                         int
 	ticks                            uint16
 	devFASTSTART, close              bool
 }
@@ -26,12 +26,9 @@ type GameSim struct {
 func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 	g := &GameSim{
 		SimSpeed: 1,
-		modAdd:   1,
-		modMult:  4,
 		gWidth:   GameSimWidth,
 		gHeight:  GameSimHeight,
 		pal:      gfx.PaletteGP,
-		//rngen:    rng, //grident can have its own rng source
 	}
 	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight)
 	//==== TESTING STUFF ====
@@ -49,7 +46,6 @@ func (g *GameSim) Update() error {
 		g.fastInitializeDev()
 	}
 	if g.SimSpeed > 0 && g.isSimTick() {
-		g.maingrid.SetMod(g.modAdd, g.modMult)
 		g.maingrid.SimstepLVSD(true)
 		if g.maingrid.Debug {
 			g.maingrid.Img.WritePixels(g.maingrid.ApplyDbgOverlay(0))
