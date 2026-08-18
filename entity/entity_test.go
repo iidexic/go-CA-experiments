@@ -118,8 +118,9 @@ func testCalcZones(t *testing.T, zx, zy, width, height int) {
 
 func benchmarkGridLVSD(b *testing.B, x, y int) {
 	g := MakeGridDefault(x, y)
+	g.SetRuleset(NewLVSD())
 	for b.Loop() {
-		g.SimstepLVSD()
+		g.Simstep()
 	}
 }
 

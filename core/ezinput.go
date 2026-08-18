@@ -5,7 +5,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/iidexic/go-CA-experiments/entity"
 	"github.com/iidexic/go-CA-experiments/gfx"
 	"github.com/iidexic/go-CA-experiments/input"
 )
@@ -103,9 +102,13 @@ func (g *GameSim) callKey(k ebiten.Key) {
 		}
 
 	case ebiten.KeyArrowLeft:
-		entity.CutoffDown()
+		if lv := g.lvsd(); lv != nil {
+			lv.CutoffDown()
+		}
 	case ebiten.KeyArrowRight:
-		entity.CutoffUp()
+		if lv := g.lvsd(); lv != nil {
+			lv.CutoffUp()
+		}
 	case ebiten.KeyEscape:
 		g.close = true
 	}

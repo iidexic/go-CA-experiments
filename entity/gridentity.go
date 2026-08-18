@@ -19,6 +19,7 @@ type GridEntity struct {
 	Visible bool   // grid visibility toggle
 	Debug   bool   // grid debug  toggle
 	reload  func() // func called to refresh rng
+	ruleset Ruleset
 }
 
 // Subsections of full Grid
@@ -33,10 +34,9 @@ type zones struct {
 // MakeGridDefault generates base CA grid
 func MakeGridDefault(gWidth, gHeight int) *GridEntity {
 	borderTot := (gWidth / 16)
-	width := gWidth - borderTot   //(31 * gWidth) / 32
-	height := gHeight - borderTot //(31 * gHeight) / 32
+	width := gWidth - borderTot
+	height := gHeight - borderTot
 	grid := GridEntity{
-
 		Img:    ebiten.NewImage(width, height),
 		Bounds: make([]int, 4),
 		Op:     &ebiten.DrawImageOptions{},
@@ -91,11 +91,8 @@ func calculateZones(x, y, width, height int) *zones {
 	return &z
 }
 
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//****************************************************************************
-
-// pxisort EXCLUSIVELY sorts RGB bytes: returns slice of indices of RGB, smallest to largest value
-func pxisort(pix []byte) (idx [3]int) {
+// pxisort EXCLUSIVELY sorts RGB bytes: returns indices of RGB smallest-to-largest.
+func pxisort(pix []byte) [3]int {
 	a, b, c := pix[0], pix[1], pix[2]
 	if a <= b {
 		if b <= c {
@@ -122,51 +119,6 @@ func (grid *GridEntity) XY() (int, int) {
 
 func (grid *GridEntity) getrng(i int) byte { return grid.rng[i%grid.Area] }
 
-// this is a type alias:
-type outcome = int
-
-// outcome enum:
-const (
-	ineut outcome = iota
-	ilose
-	iwin
-	istale
-	ifriend
-	imine
-)
-
-func (grid *GridEntity) exec1v1(o outcome, ipx, epx int, align bool) {
-	i := ipx * 4
-	e := epx * 4
-	_ = align
-	switch o {
-	case ilose:
-		sliceToward(grid.Px[e:e+3], grid.Px[i:i+3], 200)
-	case iwin:
-		sliceToward(grid.Px[i:i+3], grid.Px[e:e+3], 200)
-	case ifriend:
-		grid.interactFriend(i, e)
-	case imine:
-		grid.interactMine(i, e)
-	case istale:
-		grid.interactStalemate(i, e)
-	}
-}
-
-// SimstepLVSD performs one cycle/screen of checks and updates
-// for the center-distance intensity comparison sim ("Light VS Dark")
-func (grid *GridEntity) SimstepLVSD() {
-	grid.nticks++
-	grid.reload()
-	clear(grid.zone.zsum)
-	rv := grid.rng[0]
-	for i := range grid.Area {
-		grid.pxtozone(i)
-		grid.calculateInteraction(i, grid.nticks^rv)
-		grid.calculateInteraction(i, grid.nticks-rv)
-	}
-}
-
 func (grid *GridEntity) pxtozone(i int) {
 	zn := int(grid.zone.cellzone[i])
 	if !(zn >= grid.zone.numX*grid.zone.numY) {
@@ -175,264 +127,32 @@ func (grid *GridEntity) pxtozone(i int) {
 	}
 }
 
-// calculateInteraction replaces processInteraction, adding direction
-// only 1 interaction per i, but in a direction based on color vals
-func (grid *GridEntity) calculateInteraction(i int, xor1 byte) {
-	iR := i * 4
-	//dir := (grid.Px[iR+xor1] ^ grid.Px[iR+xor2]) << (grid.nticks % 7)
-	dir := xor1 % 4
-
-	var opp, oppR int
-	switch dir {
-	case 0: //left
-		opp = sidewrap(i, 1, int(grid.X))
-	case 1: //up
-		opp = sidewrap(i, -1, int(grid.X))
-	case 2: //down
-		opp = wrap(i-int(grid.X), grid.Area)
-	case 3: //right
-		opp = wrap(i+int(grid.X), grid.Area)
-	}
-	oppR = opp * 4
-	irng := grid.getrng(i)
-
-	iVal := bavg(grid.Px[iR], grid.Px[iR+1], grid.Px[iR+2]) // averaged Value of pixel colors
-	oVal := bavg(grid.Px[oppR], grid.Px[oppR+1], grid.Px[oppR+2])
-
-	results := versusLVSD(irng, iVal, oVal) // (currently) return slice of lightWin bools.
-	grid.exec1v1(results[0], i, opp, iVal > 128)
-}
-
-var testCutoff byte = 127 //---~TestCutoff~---
-
-func versusLVSD(rng byte, iClr byte, versus ...byte) []outcome {
-	wout := make([]outcome, len(versus))
-
-	if iClr == 127 || iClr == 128 {
-		return wout
-	}
-	alignment := iClr > 128
-	//---TODO: No reason to go through conditionals here and then do a return and send that to another function to check the conditions again to find out what needs to be ran.
-	for i, v := range versus {
-		if v == 127 || v == 128 { // mine (future functionality) if v neutral
-			wout[i] = imine
-		} else if (v > 128) == alignment { // if vs alignment == mc alignment
-			wout[i] = ifriend
-		} else { // the actual battle
-			cutoff := (int(testCutoff) + int(rng)) / 2
-			rval := battlemc(iClr, v, byte(cutoff))
-			switch {
-			case rval > 0:
-				wout[i] = iwin
-			case rval < 0:
-				wout[i] = ilose
-			case rval == 0:
-				wout[i] = istale
-			}
-		}
-	}
-
-	return wout
-}
-
-// battlemc takes mc and enemy, and returns result
-// Output int: sign = win/lose, size = by how much.
-func battlemc(mainchar, enemy, rng byte) (mcWin int) {
-	var victoryLine byte = mainchar + enemy - 128 //>127 or 128
-	mcWin = int(rng) - int(victoryLine)           // positive = lightWin
-	if mainchar < 127 {                           // if mc is not light, switch lightwin to darkwin
-		return -mcWin
-	}
-	return mcWin
-}
-func (grid *GridEntity) interactMine(i, m int) {
-	if grid.getrng(i)%10 < 3 {
-		ip := grid.Px[i : i+4]
-		ival := bavg(ip[0], ip[1], ip[2])
-		light := ival > 128
-		mp := grid.Px[m : m+4]
-		s := pxisort(mp[:3])
-		//---[Mine Behavior]
-		//- Each value (light-> colorval | dark-> empty colorval)
-		//- 3-color is most energy/hardest to mine
-		//- going down to 1-color,  easiest to mine
-		if light {
-			mineLV1 := mp[s[2]] - mp[s[1]]
-			mineLV2 := mp[s[1]] - mp[s[0]]
-			switch {
-			case mineLV1 > 15:
-				mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 16)
-			case mineLV2 > 3:
-				mp[s[2]], ip[s[2]] = bmov(mp[s[2]], ip[s[2]], 4)
-				mp[s[1]], ip[s[1]] = bmov(mp[s[1]], ip[s[1]], 4)
-			default:
-				bsladd(ip[:3], 2)
-				bslsub(mp[:3], 2)
-			}
-		} else {
-			mineLV1 := (255 - mp[s[0]]) - (255 - mp[s[1]])
-			mineLV2 := (255 - mp[s[1]]) - (255 - mp[s[2]])
-			switch {
-			case mineLV1 > 15:
-				ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 16)
-			case mineLV2 > 3:
-				ip[s[0]], mp[s[0]] = bmov(ip[s[0]], mp[s[0]], 4)
-				ip[s[1]], mp[s[1]] = bmov(ip[s[1]], mp[s[1]], 4)
-			default:
-				bsladd(mp[:3], 2)
-				bslsub(ip[:3], 2)
-			}
-		}
-	}
-}
-
+// bmov moves up to amt from src to dest, clamped so neither wraps.
 func bmov(src, dest byte, amt byte) (byte, byte) {
 	lim := min(src, 255-dest, amt)
 	src -= lim
 	dest += lim
 	return src, dest
 }
-func (grid *GridEntity) interactStalemate(i, e int) {
-	ipx := grid.Px[i : i+4]
-	epx := grid.Px[e : e+4]
-	srng := int(grid.getrng(i+2)) + int(grid.getrng(i+1))
-	xtrarng := grid.getrng(i + 666)
-	iavg := bavg(ipx[0], ipx[1], ipx[2])
-	if xtrarng > 252 { //makes colored noise, lower the threshold = more noise
-		//do the XOR
-		for n := range ipx {
-			ipx[(srng*e+n)%3] ^= epx[(srng*i+n)%3]
-			epx[(srng*i+n)%3] ^= ipx[(srng*e+2+n)%3]
-		}
-	} else if iavg > 128 {
-		bsladd(ipx[:3], 16)
-		bslsub(epx[:3], 16)
-	} else if iavg < 127 {
-		bsladd(epx[:3], 16)
-		bslsub(ipx[:3], 16)
-	}
-}
-func (grid *GridEntity) interactFriend(i, e int) {
-	//! untested
-	ip := grid.Px[i : i+3]
-	ep := grid.Px[e : e+3]
 
-	ipavg := acdbavg(ip...)
-	epavg := acdbavg(ep...)
-
-	alignment := bavg(ip[0], ip[1], ip[2]) > 128
-	if ipavg > epavg {
-		sliceToward(ip, ep, 64)
-	} else if epavg > ipavg {
-		sliceToward(ep, ip, 64)
-	} else { //? possibly add a re-ordering of RGB values to match i's
-		si := pxisort(ip)
-		se := pxisort(ep)
-		if alignment {
-			if ip[si[2]] > ep[se[2]] {
-				temp := ep[si[2]]
-				ep[si[2]] = ep[se[2]]
-				ep[se[2]] = temp
-			} else {
-				temp := ip[se[2]]
-				ip[se[2]] = ip[si[2]]
-				ip[si[2]] = temp
-			}
-			bsladd(ip, 6)
-			bsladd(ep, 6)
-		} else {
-			if ip[si[0]] < ip[se[0]] {
-				temp := ep[si[0]]
-				ep[si[0]] = ep[se[0]]
-				ep[se[0]] = temp
-			} else {
-				temp := ip[se[0]]
-				ip[se[0]] = ip[si[0]]
-				ip[si[0]] = temp
-			}
-			bslsub(ip, 6)
-			bslsub(ep, 6)
-		}
-	}
-}
 func moveToward(from, to byte, amount byte) byte {
 	dist := int(to) - int(from)
 	dx := (dist * int(amount)) / 255
 	return byte(int(from) + dx)
-	// max |dx| == |dist|
 }
 
-// given two slices, moves one toward the other, specified by byte
-// to will loop if from larger than to
+// sliceToward moves each byte in from toward the corresponding byte in to.
+// to loops when from is longer.
 func sliceToward(from, to []byte, amount byte) {
-
 	lto := len(to)
 	for i := range from {
 		from[i] = moveToward(from[i], to[i%lto], amount)
 	}
 }
 
-var (
-	overlayRed  []byte = []byte{240, 160, 170, 90}
-	overlayBlue        = []byte{30, 30, 80, 90}
-	overlayMid         = []byte{90, 140, 90, 120}
-)
-
-// ApplyDbgOverlay does that.
-func (grid *GridEntity) ApplyDbgOverlay(mode int) []byte {
-	overlay := make([]byte, len(grid.Px))
-	var r int
-	for i := range grid.Area {
-		r = i * 4
-		ba := bavg(grid.Px[r], grid.Px[r+1], grid.Px[r+2])
-		switch {
-		case ba > 128:
-			mto(grid.Px[r:r+4], overlayRed, overlay[r:r+4])
-		case ba < 127:
-			mto(grid.Px[r:r+4], overlayBlue, overlay[r:r+4])
-		case ba == 127 || ba == 128:
-			mto(grid.Px[r:r+4], overlayMid, overlay[r:r+4])
-		}
-	}
-	return overlay
-}
-
-func mto(bs1, bs2, dest []byte) { //^ what
+func mto(bs1, bs2, dest []byte) {
 	for i := range dest[:3] {
 		dest[i] = moveToward(bs1[i], bs2[i], bs2[3])
 	}
 	dest[3] = 255
-}
-
-// CutoffUp is to manually change victory cutoff to see effects in real-time
-func CutoffUp() {
-	t := testCutoff
-	switch {
-	case t < 148 && t > 108:
-		t += 2
-	case t >= 148 && t < 245:
-		t += 8
-	case t <= 108:
-		t += 8
-	}
-	testCutoff = t
-}
-
-// CutoffDown is to manually change victory cutoff to see effects in real-time
-func CutoffDown() {
-	t := testCutoff
-	switch {
-	case t < 148 && t > 108:
-		t -= 2
-	case t >= 148 && t < 254:
-		t -= 8
-	case t <= 108 && t > 8:
-		t -= 8
-	}
-	testCutoff = t
-}
-
-// CutoffIs returned
-func CutoffIs() byte {
-	return testCutoff
 }

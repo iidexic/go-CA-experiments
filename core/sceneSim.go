@@ -32,6 +32,7 @@ func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 		pal:      gfx.PaletteGP,
 	}
 	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight)
+	g.maingrid.SetRuleset(entity.NewRuleset("lvsd"))
 	g.aperture = entity.NewAperture(g.maingrid, image.Rect(0, 0, g.gWidth, g.gHeight))
 	//==== TESTING STUFF ====
 	g.devFASTSTART = true
@@ -48,9 +49,9 @@ func (g *GameSim) Update() error {
 		g.fastInitializeDev()
 	}
 	if g.SimSpeed > 0 && g.isSimTick() {
-		g.maingrid.SimstepLVSD()
+		g.maingrid.Simstep()
 		if g.maingrid.Debug {
-			g.maingrid.Img.WritePixels(g.maingrid.ApplyDbgOverlay(0))
+			g.maingrid.Img.WritePixels(g.maingrid.Overlay(0))
 		} else {
 			g.maingrid.Img.WritePixels(g.maingrid.Px)
 		}
@@ -84,10 +85,21 @@ func (g *GameSim) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHe
 	return g.gWidth, g.gHeight
 }
 
+// lvsd returns the currently-installed LVSD ruleset, or nil if the active
+// ruleset is a different type / none is installed.
+func (g *GameSim) lvsd() *entity.LVSD {
+	lv, _ := g.maingrid.Ruleset().(*entity.LVSD)
+	return lv
+}
+
 func (g *GameSim) debugUpdate() {
 	defer util.Dbg.DebugBuildOutput()
 	util.DbgCountTicks()
+	var cut byte
+	if lv := g.lvsd(); lv != nil {
+		cut = lv.CutoffIs()
+	}
 	util.Dbg.UpdateDetail = fmt.Sprintf(
 		"||SPD:%d Cut:%d",
-		g.SimSpeed, entity.CutoffIs())
+		g.SimSpeed, cut)
 }
