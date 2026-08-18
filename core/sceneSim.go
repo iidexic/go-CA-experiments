@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -14,6 +15,7 @@ import (
 // GameSim struct - ebiten
 type GameSim struct {
 	maingrid                         *entity.GridEntity
+	aperture                         *entity.Aperture
 	pal                              []color.RGBA
 	gWidth, gHeight, pWidth, pHeight int
 	SimSpeed                         int
@@ -30,6 +32,7 @@ func GameSimInit(GameSimWidth, GameSimHeight int) *GameSim {
 		pal:      gfx.PaletteGP,
 	}
 	g.maingrid = entity.MakeGridDefault(g.gWidth, g.gHeight)
+	g.aperture = entity.NewAperture(g.maingrid, image.Rect(0, 0, g.gWidth, g.gHeight))
 	//==== TESTING STUFF ====
 	g.devFASTSTART = true
 	//=======================
@@ -64,8 +67,8 @@ func (g *GameSim) Draw(screen *ebiten.Image) {
 	util.DbgCountFrames()
 	screen.Fill(g.pal[gfx.GrayDark])
 
-	if g.maingrid.Draw {
-		screen.DrawImage(g.maingrid.Img, g.maingrid.Op)
+	if g.maingrid.Visible {
+		g.aperture.Draw(screen)
 	}
 
 	ebitenutil.DebugPrintAt(screen, util.Dbg.Output, g.gWidth/16, 0)

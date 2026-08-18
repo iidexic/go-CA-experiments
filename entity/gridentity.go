@@ -7,18 +7,18 @@ import (
 
 // GridEntity intended basis of cellular automata grid
 type GridEntity struct {
-	Img    *ebiten.Image
-	X, Y   uint   // (X,Y) -> Width,Height of grid
-	Bounds []int  // image bounds on screen
-	zone   *zones // zone obj, holds all zone data
-	Area   int    // Area(width*Height), total nbr of cells
-	nticks byte
-	Px     []byte // main color slice for the grid
-	rng    []byte // Slice of rng bytes, refreshed by grid.reload()
-	Op     *ebiten.DrawImageOptions
-	Draw   bool   // grid visibility toggle
-	Debug  bool   // grid debug  toggle
-	reload func() // func called to refresh rng
+	Img     *ebiten.Image
+	X, Y    uint   // (X,Y) -> Width,Height of grid
+	Bounds  []int  // image bounds on screen
+	zone    *zones // zone obj, holds all zone data
+	Area    int    // Area(width*Height), total nbr of cells
+	nticks  byte
+	Px      []byte // main color slice for the grid
+	rng     []byte // Slice of rng bytes, refreshed by grid.reload()
+	Op      *ebiten.DrawImageOptions
+	Visible bool   // grid visibility toggle
+	Debug   bool   // grid debug  toggle
+	reload  func() // func called to refresh rng
 }
 
 // Subsections of full Grid

@@ -1,6 +1,8 @@
 package core
 
 import (
+	"image"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/iidexic/go-CA-experiments/entity"
@@ -16,18 +18,30 @@ var assignedKeys = []ebiten.Key{ebiten.KeyE,
 	ebiten.KeyEnter, ebiten.KeyEscape}
 
 func inputActions(g *GameSim) {
-	//cursX,cursY:=ebiten.CursorPosition()
+	cx, cy := ebiten.CursorPosition()
+	cursor := image.Pt(cx, cy)
+
 	_, wy := ebiten.Wheel()
 	if wy > 0 {
-		//mouseWheelUp
+		g.aperture.Zoom(1, cursor)
 	} else if wy < 0 {
-		//mouseWheelDown
+		g.aperture.Zoom(-1, cursor)
 	}
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+		g.aperture.BeginPan(cursor)
+	}
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+		g.aperture.UpdatePan(cursor)
+	}
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
+		g.aperture.EndPan()
+	}
+
 	m := input.Mouse()
 	if m.CursOn(g.maingrid.Bounds) > 0 {
-
+		// reserved for cell selection wiring
 	}
-	// if m.CursOn() == 1 {}
 	g.presstime(assignedKeys)
 }
 
@@ -56,7 +70,7 @@ func (g *GameSim) fastInitializeDev() {
 func (g *GameSim) callKey(k ebiten.Key) {
 	switch k {
 	case ebiten.KeyG:
-		g.maingrid.Draw = !g.maingrid.Draw
+		g.maingrid.Visible = !g.maingrid.Visible
 	case ebiten.KeyR:
 		g.maingrid.Px = gfx.Randpx(uint(g.maingrid.Area))
 		g.maingrid.Img.WritePixels(g.maingrid.Px)
